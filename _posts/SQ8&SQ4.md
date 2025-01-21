@@ -1,0 +1,362 @@
+---
+layout: post
+title: "SQ8&SQ4"
+date:   2024-12-25
+tags: [OceanBase, 底层, 性能优化]
+comments: true
+author: huanghuoguoguo
+---
+
+_<font style="color:rgb(102, 102, 102);"></font>_
+
+包括training、encode、decode。
+
+_<font style="color:rgb(102, 102, 102);">将原来的float量化为int8，尽可能提高系统带宽，在精度可接受的范围内，提高速度。</font>_
+
+_<font style="color:rgb(102, 102, 102);">通过将值映射到一个给定的区间（min，max），以损失部分精度的代价提高查询速度。</font>_
+
+## <font style="color:rgb(61, 70, 87);">背景</font>
+在OceanBase的向量索引优化阶段，用到了这两个量化。简单描述其功能，然后描述使用。
+
+<font style="color:rgb(34, 34, 34);">这个问题，可以简化为：有没有一种量化方法，将一个d维float型向量，encode为一个d维int8型的向量，这个d维int8型的向量经过decode后，与原始向量的误差尽可能小？这样一来，存储空间降低为原来的1/4倍，并且读取int8的性能比float型会快很多。答案是肯定的，这也是本篇博文要介绍总结的Scalar Quantization。</font>
+
+<font style="color:rgb(34, 34, 34);">Scalar Quantization，即标量量化。</font>
+
+## <font style="color:rgb(61, 70, 87);">Scalar Quantization原理</font>
+<font style="color:rgb(34, 34, 34);">Scalar Quantization标量量化，分为3个过程：</font>
+
++ <font style="color:rgb(34, 34, 34);">training过程，主要是训练encode过程，需要的一些参数，这些的参数，主要是每1维对应的最大值、最小值；</font>
++ <font style="color:rgb(34, 34, 34);">encode过程，将float向量量化为int8向量（int8是其中一种数据压缩形式，还有4比特之类的，这里主要以8比特说明原理）；</font>
++ <font style="color:rgb(34, 34, 34);">decode过程，将int8向量解码为float向量；</font>
+
+<font style="color:rgb(34, 34, 34);">为了更好的说明Scalar Quantization的原理，小白菜画了Scalar Quantization标量量化原理框图，如下图所示：</font>
+
+![](https://cdn.nlark.com/yuque/0/2025/png/32754462/1737464855778-614559f5-7f46-42e8-9759-7b8548a889da.png)
+
+<font style="color:rgb(34, 34, 34);">整个Scalar Quantization其实是很容易理解的，下面对训练、编码和解码做些说明。</font>
+
+### <font style="color:rgb(61, 70, 87);">Scalar Quantization训练</font>
+<font style="color:rgb(34, 34, 34);">Scalar Quantization训练过程，如上图最左边所示，从样本中随机采样出N个样本后，训练过程主要是得到N个样本中每1维的最大值、最小值。得到最大值、最小值后，将它们保存下来即可。实际在训练的时候，N能大的时候，尽量大点。</font>
+
+### <font style="color:rgb(61, 70, 87);">Scalar Quantization编码</font>
+<font style="color:rgb(34, 34, 34);">Scalar Quantization在编码的时候，对于一个d维的待编码的float型向量x = {x_1, x_2, …., x_d}，编码过程主要包含如下步骤：</font>
+
++ <font style="color:rgb(34, 34, 34);">对每1维，求value_i = (x_i - min_i)/(max_i - min_i)；</font>
++ <font style="color:rgb(34, 34, 34);">对每1维，如果value_i < 0, 则value_i重置为value_i=0；如果value_i > 1, 则value_i重置为value_i=1。这里主要是对边界情况做下异常处理，理论情况下，是不会出现value_i < 0或者value_i > 1的；</font>
++ <font style="color:rgb(34, 34, 34);">对每1维，对应的编码 code_i = int(255*value_i)。为什么是255？可以思考下；</font>
+
+<font style="color:rgb(34, 34, 34);">整个过程，如上图中的中间图所示。这样就完成了float型向量x = {x_1, x_2, …., x_d}的编码，将向量的每1维，都变成了一个用int8表示的整型数据，也就是对应的Scalar Quantization的编码。</font>
+
+### <font style="color:rgb(61, 70, 87);">Scalar Quantization解码</font>
+<font style="color:rgb(34, 34, 34);">Scalar Quantization解码过程，是解码的逆过程。解码过程步骤如下：</font>
+
++ <font style="color:rgb(34, 34, 34);">对每1维，x_i = min_i + (code_i + 0.5)*(max_i-min_i)/255，通过该式子，即可完成对第i维的解码。留个问题：为啥code_i需要加上0.5？</font>
+
+<font style="color:rgb(34, 34, 34);">解码的过程，如上图最右边图所示。可以看到，整个训练、编码、解码过程，都是很容易理解的。下面再看看Scalar Quantization的实现。</font>
+
+## <font style="color:rgb(61, 70, 87);">Scalar Quantization实现</font>
+<font style="color:rgb(34, 34, 34);">Scalar Quantization的训练、编码、解码实现，可以参考小白菜的实现</font>[<font style="color:rgb(34, 34, 34);">scalar_quantization</font>](https://github.com/willard-yuan/cvtk/tree/master/scalar_quantization)<font style="color:rgb(34, 34, 34);">。训练过程，就是计算各维最大值、最小值，自己实现的话，具体可以看</font>[<font style="color:rgb(34, 34, 34);">L68-L97</font>](https://github.com/willard-yuan/cvtk/blob/master/scalar_quantization/train/src/sq_train.cpp#L68)<font style="color:rgb(34, 34, 34);">。使用faiss的话，如下：</font>
+
+```plain
+faiss::IndexScalarQuantizer SQuantizer(d, faiss::ScalarQuantizer::QT_8bit, faiss::METRIC_L2);
+SQuantizer.train(num_db, xb);
+// SQuantizer.add(num_db, xb);    
+faiss::write_index(&SQuantizer, model_path.c_str());
+```
+
+<font style="color:rgb(34, 34, 34);">在</font>`<font style="color:rgb(34, 34, 34);background-color:rgb(244, 244, 244);">sq_train.cpp</font>`<font style="color:rgb(34, 34, 34);">里面，对比了自己实现的训练过程结果和faiss训练出来的结果，训练出来的参数结果，两者是一致的。</font>
+
+<font style="color:rgb(34, 34, 34);">faiss encode的实现，如</font>[<font style="color:rgb(34, 34, 34);">L328</font>](https://github.com/facebookresearch/faiss/blob/master/faiss/impl/ScalarQuantizer.cpp#L328)<font style="color:rgb(34, 34, 34);">所示：</font>
+
+```plain
+void encode_vector(const float* x, uint8_t* code) const final {
+    for (size_t i = 0; i < d; i++) {
+        float xi = 0;
+        if (vdiff != 0) {
+            xi = (x[i] - vmin) / vdiff;
+            if (xi < 0) {
+                xi = 0;
+            }
+            if (xi > 1.0) {
+                xi = 1.0;
+            }
+        }
+        Codec::encode_component(xi, code, i);
+    }
+}
+```
+
+<font style="color:rgb(34, 34, 34);">其中vdiff = max - min。faiss decode的实现，如</font>[<font style="color:rgb(34, 34, 34);">L344</font>](https://github.com/facebookresearch/faiss/blob/master/faiss/impl/ScalarQuantizer.cpp#L344)<font style="color:rgb(34, 34, 34);">所示：</font>
+
+```plain
+void decode_vector(const uint8_t* code, float* x) const final {
+    for (size_t i = 0; i < d; i++) {
+        float xi = Codec::decode_component(code, i);
+        x[i] = vmin + xi * vdiff;
+    }
+}
+```
+
+<font style="color:rgb(34, 34, 34);">另外，关于Faiss实现的decode接口，由于采用了多线程方式，在实际使用的时候，</font>**<font style="color:rgb(34, 34, 34);">当请求解码的数据量不够大的时候，多线程的方式，性能反而下降</font>**<font style="color:rgb(34, 34, 34);">，具体可以看这里提到的Issue: </font>[<font style="color:rgb(34, 34, 34);">Scale quantization decodes does not fast</font>](https://github.com/facebookresearch/faiss/issues/1530)<font style="color:rgb(34, 34, 34);">。</font>
+
+## <font style="color:rgb(34, 34, 34);">在Oceanbase中的应用</font>
+在hnsw中，可以提前计算每个向量的sq4向量，直到具体计算时拿出来计算即可。
+
+因为数据集是sift128-1m，这是一个值域128的数据集[0,128]，所以非常适合用uint8来表示，在增加了带宽的优势下不会损失精度。
+
+在存储上，将float直接转化为uint8。从原本的128 * 32 = 512字节降低到128 * 8 = 128字节。降低了四倍。同时在使用simd指令时因为提高了系统带宽以及缓存带宽而获得了更好的表现。
+
+怎么做sq8优化呢？因为sift是int8类型，是否可以直接按照128/4=32维的float来处理？只需要更改dist函数。
+
+插入的时候仍然是128维的float，但是可以将其量化后，当作是32维的float，插入，但是dist函数换成操作int8类型的，维度128.感觉很有可行性。是uint8的，没有负数。是uint4的，没有超过128的数。
+
+但是似乎没有针对uint8的simd指令优化。看别人的做法是将uint8转化为int32再转为float，这不是本末倒置了吗？原本就是期望数据bit少一些，能够加速计算，现在还增加了指令。
+
+
+
+
+
+虽然sift数据集是0-128，也就是uint4的数值范围，但是先用uint8做尝试。
+
+同时，需要注意算法中所有计算距离的方法，归一化。是否有归一化的必要呢？
+
+![](https://cdn.nlark.com/yuque/0/2024/png/32754462/1732758515712-13b8d412-7a0a-4dc0-a133-53534525899b.png?x-oss-process=image%2Fformat%2Cwebp%2Fresize%2Cw_1312%2Climit_0)
+
+大部分是同分布的，所以不需要归一化也可以。这是一个点。归一化之后会破坏原本的int8关系，所以不进行归一化。
+
+
+
+
+
+目前的问题是，计算距离的函数计算得出是inf，不知道为什么。先判断距离函数是否走到了。是否符合预期。默认就是不使用归一化的。（这里后来意识到，是提供的编译机执行那几个simd指令会报错，但是提测机器不会）
+
+## 
+在使用朴素算法的sq8时，相比原始参数，qps达到830.
+
+![](https://cdn.nlark.com/yuque/0/2024/png/32754462/1733065786189-d708acc0-3823-4f95-adbd-9b1a337323eb.png)
+
+但是使用18 200 256的参数时，效果并没有比使用simd的18 200 256好。
+
+![](https://cdn.nlark.com/yuque/0/2024/png/32754462/1733121813734-11b409b0-f108-46ce-9536-a49ec2bdaea1.png)
+
+
+
+```plain
+我的输入数据是两个128维的int8的向量，我需要计算他们的L2距离。我需要尽可能高效的计算，所以期望使用avx512指令集。
+一次性加载64个元素至寄存器中，然后两个向量相减得到diff，diff中存有64个int8的差值，但是int8的平方需要用int16来存储，并且一个512的寄存器只能存储32个int16.
+所以我需要将diff分段进行运算，前32个diff进行平方后放到一个寄存器中，后32个diff进行平方后放到另一个寄存器中，然后将这些int16加和到int32的sum中。
+然后重复这个过程。
+```
+
+### 总结：
+踩了很多坑，最后发现，尽管可以使用avx512，但是不能直接一次性读取64个int8，可以读满，也可以做减法。
+
+```plain
+// 加载64个int8元素
+__m512i x_values = _mm512_loadu_epi8(x + i);
+__m512i y_values = _mm512_loadu_epi8(y + i);
+
+// 计算差值
+__m512i diff = _mm512_sub_epi8(x_values, y_values);
+```
+
+上述步骤，将64个int8值放到512位的寄存器中，然后相减，此时该512位的寄存器中，有64个int8，因为sift数据集是0-128的，所以可以认为这些diff都是正确的，没有下溢。
+
+但是在计算L2距离的平方时，出现了问题。0-128的平方大于int8，所以只能升维。如果按照我原来的想法，是能够先进行一半，再进行一半的，但是gpt一直给不出正确的答案。gpt的升维直接将数据覆盖，就丢弃了。查看别人的方案，在处理sq8的数据时，是通过偏移和缩放放回float然后再用float进行计算的。那这就丢失了int8的优势了，只有存储时有优势了。所以，尽量还是想要用int8和avx512来进行运算。
+
+simd的优势是单条指令，多数据加和相减。就算是将结果加回也是一样，所以能尽量用上还是用上。
+
+所以如果一旦512存满了int8的diff，不能再自己做平方的操作了。因为会覆盖，但是如果将其挪来挪去，比如一半移出来变成int16，然后再平方，感觉又不如直接。。？待会试一下，如果uint16可以接受四轮结果的话。（在坚持了一小会儿之后，可能还是溢出了。）
+
+
+
+那么按照刚才的思路的话，需要有一个寄存器sum能够存储多轮平方的结果，如果是uint16来存储sum的话，（寄了，不分析了。）
+
+```cpp
+float 
+SQ8ComputeCodesL2Sqr(const void* pVect1v, const void* pVect2v, const void* qty_ptr) {
+    uint8_t* x = (uint8_t*)pVect1v;
+    uint8_t* y = (uint8_t*)pVect2v;
+
+    __m512i sum = _mm512_setzero_si512(); // Initialize sum as zero 
+    for (int i = 0; i + 31 < 128; i += 32) {   
+        __m256i code1_values = _mm256_loadu_si256(reinterpret_cast<const __m256i*>(x + i));   
+        __m256i code2_values = _mm256_loadu_si256(reinterpret_cast<const __m256i*>(y + i));   
+
+        // Convert uint8_t to int16_t 
+        __m512i codes1_512 = _mm512_cvtepu8_epi16(code1_values);   
+        __m512i codes2_512 = _mm512_cvtepu8_epi16(code2_values);   
+
+        // Compute the difference 
+        __m512i diff = _mm512_sub_epi16(codes1_512, codes2_512);   
+
+        // Compute the square of the differences 
+        __m512i diff_squared = _mm512_mullo_epi16(diff, diff);   
+
+        // Accumulate the squared differences (using int16)
+        sum = _mm512_add_epi16(sum, diff_squared);  // Using 16-bit addition
+    }   
+
+    // Sum up all elements in the 512-bit register 
+    uint16_t result[32];  // Store results in a 32-element array
+    _mm512_storeu_si512(result, sum);  
+
+    int total_sum = 0;  
+    for (int i = 0; i < 32; ++i) {  
+        total_sum += result[i]; // Total sum of squared differences 
+    }  
+
+    return static_cast<float>(total_sum);
+}
+```
+
+### SQ8 20 200 128
+使用int8转32的形式，获得了1300的qps。
+
+```cpp
+float 
+SQ8ComputeCodesL2Sqr(const void* pVect1v, const void* pVect2v, const void* qty_ptr) {
+    uint8_t* x = (uint8_t*)pVect1v;
+    uint8_t* y = (uint8_t*)pVect2v;
+
+    __m512i sum = _mm512_setzero_si512(); // Initialize sum as zero
+    for (int i = 0; i + 15 < 128; i += 16) { 
+        __m128i code1_values = _mm_loadu_si128(reinterpret_cast<const __m128i*>(x + i)); 
+        __m128i code2_values = _mm_loadu_si128(reinterpret_cast<const __m128i*>(y + i)); 
+
+        __m512i codes1_512 = _mm512_cvtepu8_epi32(code1_values); 
+        __m512i codes2_512 = _mm512_cvtepu8_epi32(code2_values); 
+
+        __m512i diff = _mm512_sub_epi32(codes1_512, codes2_512); 
+        __m512i diff_squared = _mm512_mullo_epi32(diff, diff); 
+
+        sum = _mm512_add_epi32(sum, diff_squared); // Accumulate squared differences
+    } 
+
+    // Sum up all elements in the 512-bit register
+    int result[16];
+    _mm512_storeu_si512(result, sum);
+
+    int total_sum = 0;
+    for (int i = 0; i < 16; ++i) {
+        total_sum += result[i]; // Total sum of squared differences
+    }
+
+    return static_cast<float>(total_sum); 
+}
+
+```
+
+本地测试报错，但是提测可以通过。效果不理想。不知道是不是对int16的优化没有那么好？理论上带宽节约了一半，并行度提高了，应该能够提升，但是不升反降了。
+
+![](https://cdn.nlark.com/yuque/0/2024/png/32754462/1733273355012-e49558f4-f5ff-4097-a7ab-a2b613621bb6.png)
+
+```cpp
+float 
+SQ8ComputeCodesL2Sqr(const void* pVect1v, const void* pVect2v, const void* qty_ptr) {
+    int8_t* x = (int8_t*)pVect1v;
+    int8_t* y = (int8_t*)pVect2v;
+
+    __m512i sum = _mm512_setzero_si512(); // Initialize sum as zero 
+    for (int i = 0; i + 31 < 128; i += 32) {   
+        __m256i code1_values = _mm256_loadu_si256(reinterpret_cast<const __m256i*>(x + i));   
+        __m256i code2_values = _mm256_loadu_si256(reinterpret_cast<const __m256i*>(y + i));   
+
+        // Convert uint8_t to int16_t 
+        __m512i codes1_512 = _mm512_cvtepu8_epi16(code1_values);   
+        __m512i codes2_512 = _mm512_cvtepu8_epi16(code2_values);   
+
+        // Compute the difference 
+        __m512i diff = _mm512_sub_epi16(codes1_512, codes2_512);   
+
+        // Compute the square of the differences 
+        __m512i diff_squared = _mm512_mullo_epi16(diff, diff);   
+
+        // Accumulate the squared differences (using int16)
+        sum = _mm512_add_epi16(sum, diff_squared);  // Using 16-bit addition
+    }   
+
+    // // Sum up all elements in the 512-bit register 
+    uint16_t result[32];  // Store results in a 32-element array
+    _mm512_storeu_si512(result, sum);  
+
+    int total_sum = 0;  
+    for (int i = 0; i < 32; ++i) {  
+        total_sum += result[i]; // Total sum of squared differences 
+    }  
+
+    return static_cast<float>(total_sum);
+}
+```
+
+```cpp
+float 
+SQ8ComputeCodesL2Sqr(const void* pVect1v, const void* pVect2v, const void* qty_ptr) {
+    uint8_t* x = (uint8_t*)pVect1v;
+    uint8_t* y = (uint8_t*)pVect2v;
+
+    __m512i sum_low = _mm512_setzero_si512();  // For lower 16 elements
+    __m512i sum_high = _mm512_setzero_si512(); // For higher 16 elements
+    
+    for (int i = 0; i < 128; i += 32) {   
+        __m256i code1_values = _mm256_loadu_si256(reinterpret_cast<const __m256i*>(x + i));   
+        __m256i code2_values = _mm256_loadu_si256(reinterpret_cast<const __m256i*>(y + i));   
+        
+        // Convert uint8_t to int16_t 
+        __m512i codes1_512 = _mm512_cvtepu8_epi16(code1_values);   
+        __m512i codes2_512 = _mm512_cvtepu8_epi16(code2_values);   
+        
+        // Compute the difference 
+        __m512i diff = _mm512_sub_epi16(codes1_512, codes2_512);   
+        
+        // Compute the square of the differences 
+        __m512i diff_squared = _mm512_mullo_epi16(diff, diff);   
+        
+        // Unpack and accumulate to 32-bit integers to prevent overflow
+        __m512i diff_squared_low = _mm512_unpacklo_epi16(diff_squared, _mm512_setzero_si512());
+        __m512i diff_squared_high = _mm512_unpackhi_epi16(diff_squared, _mm512_setzero_si512());
+        
+        sum_low = _mm512_add_epi32(sum_low, diff_squared_low);
+        sum_high = _mm512_add_epi32(sum_high, diff_squared_high);
+    }   
+    
+
+    int PORTABLE_ALIGN64 result_low[16];
+    int PORTABLE_ALIGN64 result_high[16];
+    _mm512_storeu_si512(result_low, sum_low);
+    _mm512_storeu_si512(result_high, sum_high);
+    
+
+    int total_sum = 0;
+    for (int i = 0; i < 16; ++i) {
+        total_sum += result_low[i] + result_high[i];
+    }
+    
+    return static_cast<float>(total_sum);
+}
+```
+
+效果都是1100
+
+### <font style="color:rgb(34, 34, 34);">SQ4</font>
+尽管使用SQ8已经能够得到很好的效果，但是仍然可以在这上面做优化。查看上面的计算距离的函数，仍然需要两次读入。而如果使用SQ4，512字节降低到64字节，刚好是一个cache line的大小。
+
+具体的过程是：
+
++ 粗算。
+    - 在计算候选节点以及结果节点时，可以使用SQ4计算近似距离，当比较的二者距离之差小于5的时候，就计算精确距离。
++ 精算。
+    - 精确距离使用SQ8进行计算，仍然可以在不丢失精度的情况下获得很好的性能。
++ 重排。
+    - 计算后可能大体结果是对的，但是召回率下降。这里仍然需要使用SQ8进行精确距离计算之后，返回正确的结果。
+
+使用SQ4之后，qps可以从1400提升到1600。
+
+
+
+<font style="color:rgb(34, 34, 34);"></font>
+
+<font style="color:rgb(34, 34, 34);">参考：</font>
+
+[https://yongyuan.name/blog/scalar-quantization.html](https://yongyuan.name/blog/scalar-quantization.html)
+
