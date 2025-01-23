@@ -68,7 +68,7 @@ CREATE TABLE `orders` (
 
 <font style="color:rgb(38, 38, 38);">如果把 o_orderkey 设计成上图所示的自增，那么很可能 o_orderkey 同为 1 的记录在不同的分片出现，如下图所示：</font>
 
-![](https://cdn.nlark.com/yuque/0/2025/webp/32754462/1737635380432-03dfb2cd-6dc5-4023-a4f9-c1bb749d8036.webp)
+![](https://huanghuoguoguo.github.io/images/OceanBase-suoyin-1.jpeg)
 
 **<font style="color:rgb(38, 38, 38);">所以，在分布式数据库架构下，尽量不要用自增作为表的主键</font>**<font style="color:rgb(38, 38, 38);">：自增性能很差、安全性不高、不适用于分布式架构。</font>
 
@@ -155,7 +155,7 @@ WHERE o_orderate >= ? o_orderdate < ?
 
 <font style="color:rgb(38, 38, 38);">最后，我们再来回顾下淘宝用户订单表的设计：</font>
 
-![](https://cdn.nlark.com/yuque/0/2025/webp/32754462/1737635380717-c9faa354-6678-4b3f-a39b-c66d8371d848.webp)
+![](https://huanghuoguoguo.github.io/images/OceanBase-suoyin-2.jpeg)
 
 <font style="color:rgb(38, 38, 38);">上图是我的淘宝订单信息，可以看到，订单号的最后 6 位都是 308113，所以可以大概率推测出：</font>
 
@@ -167,7 +167,7 @@ WHERE o_orderate >= ? o_orderdate < ?
 
 <font style="color:rgb(38, 38, 38);">例如 tpch 库中的表 nation，用于存储国家信息，但是在我们前面的 SQL 关联查询中，又经常会使用到这张表，对于这种全局表，可以在每个分片中存储，这样就不用跨分片地进行查询了。如下面的设计：</font>
 
-![](https://cdn.nlark.com/yuque/0/2025/webp/32754462/1737635380648-9406a506-ea76-4e5b-a0f5-abbae44e932d.webp)
+![](https://huanghuoguoguo.github.io/images/OceanBase-suoyin-3.jpeg)
 
 #### <font style="color:rgb(24, 24, 24) !important;">唯一索引</font>
 <font style="color:rgb(38, 38, 38);">最后我们来谈谈唯一索引的设计，与主键一样，如果只是通过数据库表本身唯一约束创建的索引，则无法保证在所有分片中都是唯一的。</font>
