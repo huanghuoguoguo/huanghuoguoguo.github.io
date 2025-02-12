@@ -20,14 +20,15 @@ permalink: /about/
 - spring framwork
 - 高性能mysql
 - redis设计与实现
-- netty
 - 设计数据密集型应用
+- 并发编程的艺术
 
 看过的一些源码：
 - xxl-job
 - jd-hotkeys
 - ...
 
+对c++qt，dyango，springboot，cloud，微信小程序，vue等都有一些实践。
 如果你对我的文章有任何疑问，或者发现文章中存在错误，可以通过邮件与我联系。
 
 ## 版权声明
