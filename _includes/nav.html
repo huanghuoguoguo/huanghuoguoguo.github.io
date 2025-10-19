@@ -21,6 +21,31 @@
     </nav>
   </div>
 
+  <!-- 最近阅读书籍模块 -->
+  {% if site.recent_books %}
+  <div class="recent-books">
+    <h3 class="recent-books-title">📚 最近阅读</h3>
+    <div class="books-list">
+      {% for book in site.recent_books %}
+      <div class="book-item" onclick="filterByTag('{{ book.tag }}')">
+        <div class="book-cover">
+          {% if book.cover %}
+          <img src="{{ site.baseurl }}{{ book.cover }}" alt="{{ book.title }}" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+          {% endif %}
+          <div class="book-placeholder" {% if book.cover %}style="display:none;"{% endif %}>📖</div>
+        </div>
+        <div class="book-info">
+          <div class="book-title">{{ book.title }}</div>
+          <div class="book-author">{{ book.author }}</div>
+          <div class="book-description">{{ book.description }}</div>
+          <div class="book-tag">#{{ book.tag }}</div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
   <div class="wrapper-footer-desktop">
     <footer class="footer">
       {% include footer.html %}
