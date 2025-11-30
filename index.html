@@ -44,7 +44,7 @@ layout: default
   {% unless post.draft %}
     <article class="post">
       <h1>
-        <a href="{{ site.baseurl }}{{ post.url }}">{{ post.title }}</a>
+        <a href="{% if post.yuque_url %}{{ post.yuque_url }}{% else %}{{ site.baseurl }}{{ post.url }}{% endif %}" {% if post.yuque_url %}target="_blank"{% endif %}>{{ post.title }}</a>
       </h1>
 
       <div class="meta">
@@ -67,7 +67,7 @@ layout: default
         {{ post.excerpt | truncate: 200 }}
       </div>
 
-      <a href="{{ site.baseurl }}{{ post.url }}" class="read-more">Read More</a>
+      <a href="{% if post.yuque_url %}{{ post.yuque_url }}{% else %}{{ site.baseurl }}{{ post.url }}{% endif %}" class="read-more" {% if post.yuque_url %}target="_blank"{% endif %}>Read More</a>
     </article>
   {% endunless %}
   {% endfor %}

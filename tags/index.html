@@ -28,7 +28,9 @@ permalink: /tags/
       {% for post in tag[1] %}
         {% if post.title != null %}
           <li>
-            {% if post.link %}
+            {% if post.yuque_url %}
+              <a href="{{ post.yuque_url }}" target="_blank">
+            {% elsif post.link %}
               <a href="{{ post.link }}">
             {% else %}
               <a href="{{ site.baseurl }}{{ post.url }}">
