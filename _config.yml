@@ -12,23 +12,6 @@ navigation:
   - name: 分类
     url: /tags
 
-# 最近阅读的书籍配置
-recent_books:
-  - title: "深入理解Java虚拟机"
-    author: "周志明"
-    tag: "java"
-    cover: "/images/jvm-book.png"
-    description: "JVM原理与实践"
-  - title: "设计数据密集型应用"
-    author: "Martin Kleppmann"
-    tag: "数据库"
-    cover: "/images/ddia-book.png"
-    description: "分布式系统设计"
-  - title: "Redis设计与实现"
-    author: "黄健宏"
-    tag: "redis"
-    cover: "/images/redis-book.png"
-    description: "Redis内部机制"
 
 paginate: 8
 
