@@ -1,12 +1,12 @@
 ---
-layout: page
-title: About
-permalink: /about/
+# the default layout is 'page'
+icon: fas fa-info-circle
+order: 4
 ---
 
 ## 关于我
 
-你好，我是黄河^^，后端 / 基础架构方向，对系统性能和数据库内核比较感兴趣。
+你好，我是黄河，后端 / 基础架构方向，对系统性能和数据库内核比较感兴趣。
 
 这个博客记录我在技术学习过程中的笔记和实践总结，内容难免有理解偏差，欢迎指正。
 
@@ -27,14 +27,14 @@ permalink: /about/
 ## 技术方向
 
 **比较熟悉的**
-- 系统性能分析：perf、eBPF/bpftrace、syscount，读过《性能之巅》并做了完整的实践项目（[五轮优化把数据生成器从 934K 跑到 9.9M rows/s](/2025-1-22-造2000万行数据我把系统跑崩了/)）
+- 系统性能分析：perf、eBPF/bpftrace、syscount，读过《性能之巅》并做了完整的实践项目
 - 数据库内核：完成了 MiniOB 全部赛题（SQL → 存储 → 事务 → 向量索引），读过《高性能MySQL》《Redis设计与实现》
 - Java 生态：Spring Boot / Spring Cloud，读过《Effective Java》《Java并发编程的艺术》，看过 Spring Framework 部分源码
 - 分布式系统：读过《设计数据密集型应用》（DDIA），有一些分布式存储的实践经验
 
 **在探索的**
 - Rust 系统编程（db_gen 项目用 Rust 写的，涉及多线程、io_uring、零拷贝等）
-- LLM Agent（用 LangGraph 搭了一个[自动性能诊断系统](/2025-3-8-让LLM当性能侦探/)，让 LLM 自主调用 perf/syscount 工具诊断瓶颈）
+- LLM Agent（用 LangGraph 搭了一个自动性能诊断系统，让 LLM 自主调用 perf/syscount 工具诊断瓶颈）
 - Linux 内核机制（写过 eBPF Ring Buffer、io_uring 的验证实验）
 
 **读过的书**
@@ -47,7 +47,3 @@ permalink: /about/
 ## 交流
 
 文章中如有错误或不同见解，欢迎通过邮件交流。
-
-## 版权
-
-博客文章均为个人学习笔记和原创总结，转载请注明出处。
