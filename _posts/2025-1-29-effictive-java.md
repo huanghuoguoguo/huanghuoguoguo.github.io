@@ -2,6 +2,7 @@
 layout: post
 title: "effictive java"
 date: 2025-1-29
+categories: [后端开发, 读书笔记]
 tags: [java, 读书笔记]
 comments: true
 author: huanghuoguoguo

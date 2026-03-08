@@ -2,6 +2,7 @@
 layout: post
 title: "null 关键字"
 date: 2025-2-27
+categories: [数据库, MiniOB]
 tags: [miniob, 数据库]
 comments: true
 author: huanghuoguoguo

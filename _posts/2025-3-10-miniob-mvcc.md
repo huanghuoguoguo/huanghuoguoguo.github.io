@@ -2,6 +2,7 @@
 layout: post
 title: "update_mvcc 多版本并发控制"
 date: 2025-3-10
+categories: [数据库, MiniOB]
 tags: [miniob, 数据库]
 comments: true
 author: huanghuoguoguo

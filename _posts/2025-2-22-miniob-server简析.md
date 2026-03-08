@@ -2,6 +2,7 @@
 layout: post
 title: "MiniOB Server模块简析"
 date: 2025-2-22
+categories: [数据库, MiniOB]
 tags: [miniob, 数据库]
 comments: true
 author: huanghuoguoguo

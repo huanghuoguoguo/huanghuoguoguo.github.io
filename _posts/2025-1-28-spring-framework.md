@@ -2,6 +2,7 @@
 layout: post
 title: "spring framework"
 date: 2025-1-28
+categories: [后端开发, Java]
 tags: [spring, java, 框架]
 comments: true
 author: huanghuoguoguo

@@ -2,6 +2,7 @@
 layout: post
 title: "drop table 删除表操作"
 date: 2025-2-23
+categories: [数据库, MiniOB]
 tags: [miniob, 数据库]
 comments: true
 author: huanghuoguoguo

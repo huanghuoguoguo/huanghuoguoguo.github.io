@@ -2,6 +2,7 @@
 layout: post
 title: "join 连接"
 date: 2025-2-28
+categories: [数据库, MiniOB]
 tags: [miniob, 数据库]
 comments: true
 author: huanghuoguoguo

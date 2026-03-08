@@ -2,6 +2,7 @@
 layout: post
 title: "alias as 关键字供上下文绑定"
 date: 2025-3-6
+categories: [数据库, MiniOB]
 tags: [miniob, 数据库]
 comments: true
 author: huanghuoguoguo

@@ -2,6 +2,7 @@
 layout: post
 title: "测试驱动开发与vibe coding"
 date: 2025-1-16
+categories: [软件工程, 研发之道]
 tags: [编程实践, 开发方法]
 comments: true
 author: huanghuoguoguo

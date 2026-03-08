@@ -2,6 +2,7 @@
 layout: post
 title: "storage 存储"
 date: 2025-3-4
+categories: [数据库, MiniOB]
 tags: [miniob, 数据库]
 comments: true
 author: huanghuoguoguo

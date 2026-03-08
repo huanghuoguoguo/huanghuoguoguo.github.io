@@ -2,6 +2,7 @@
 layout: post
 title: "Date 添加日期类型"
 date: 2025-2-23
+categories: [数据库, MiniOB]
 tags: [miniob, 数据库]
 comments: true
 author: huanghuoguoguo

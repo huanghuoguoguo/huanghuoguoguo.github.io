@@ -2,6 +2,7 @@
 layout: post
 title: "hnsw大limt-分段堆"
 date: 2025-1-19
+categories: [数据库, 基础理论]
 tags: [向量索引, hnsw, 算法]
 comments: true
 author: huanghuoguoguo

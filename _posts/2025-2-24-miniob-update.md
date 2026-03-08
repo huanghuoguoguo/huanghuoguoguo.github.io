@@ -2,6 +2,7 @@
 layout: post
 title: "update 更新表"
 date: 2025-2-24
+categories: [数据库, MiniOB]
 tags: [miniob, 数据库]
 comments: true
 author: huanghuoguoguo

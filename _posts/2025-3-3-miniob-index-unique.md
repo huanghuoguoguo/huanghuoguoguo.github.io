@@ -2,6 +2,7 @@
 layout: post
 title: "index&unique 多列索引&唯一索引"
 date: 2025-3-3
+categories: [数据库, MiniOB]
 tags: [miniob, 数据库]
 comments: true
 author: huanghuoguoguo

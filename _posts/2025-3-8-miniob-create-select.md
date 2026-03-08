@@ -2,6 +2,7 @@
 layout: post
 title: "create - select 建表从select获取"
 date: 2025-3-8
+categories: [数据库, MiniOB]
 tags: [miniob, 数据库]
 comments: true
 author: huanghuoguoguo

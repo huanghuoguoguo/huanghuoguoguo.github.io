@@ -2,6 +2,7 @@
 layout: post
 title: "OceanBase索引，分布式数据存储"
 date:   2025-1-5
+categories: [数据库, 基础理论]
 tags: [OceanBase, 数据库, 底层]
 comments: true
 author: huanghuoguoguo

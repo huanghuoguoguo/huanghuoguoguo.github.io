@@ -2,6 +2,7 @@
 layout: post
 title: "update - select update从select获取"
 date: 2025-3-7
+categories: [数据库, MiniOB]
 tags: [miniob, 数据库]
 comments: true
 author: huanghuoguoguo

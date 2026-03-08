@@ -2,6 +2,7 @@
 layout: post
 title: "sub query 子查询"
 date: 2025-3-5
+categories: [数据库, MiniOB]
 tags: [miniob, 数据库]
 comments: true
 author: huanghuoguoguo

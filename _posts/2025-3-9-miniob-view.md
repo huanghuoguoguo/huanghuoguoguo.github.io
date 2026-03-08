@@ -2,6 +2,7 @@
 layout: post
 title: "create - view view视图"
 date: 2025-3-9
+categories: [数据库, MiniOB]
 tags: [miniob, 数据库]
 comments: true
 author: huanghuoguoguo
