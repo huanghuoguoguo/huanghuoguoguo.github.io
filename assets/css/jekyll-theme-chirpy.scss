@@ -1,0 +1,15 @@
+/* prettier-ignore */
+@use 'main
+{%- if jekyll.environment == "production" -%}
+  .bundle
+{%- endif -%}
+';
+
+/* append your custom style below */
+
+/* 全局表格样式：允许单元格内容自动换行 */
+.post-content table th,
+.post-content table td {
+  white-space: normal !important;
+  word-break: break-word;
+}
