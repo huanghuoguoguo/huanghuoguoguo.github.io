@@ -64,7 +64,7 @@ CREATE TABLE `orders` (
 
 如果将 `O_ORDERKEY` 设为自增，则“订单编号 = 1” 的记录可能在分片 A 和分片 B 中都被独立生成并存储。
 
-![OceanBase 自增主键冲突分析](/images/OceanBase-suoyin-1.jpeg)
+<!-- ![OceanBase 自增主键冲突分析](/images/OceanBase-suoyin-1.jpeg) -->
 
 **最佳实践**：分布式架构下，严禁使用底层数据库的隐式自增机制作为表的主键。主键设计的主流标准应当是：**在业务侧通过发号器生成有序的全局唯一键（如优化后的高低位 UUID、雪花算法 Snowflake 等）**。
 
@@ -115,7 +115,7 @@ SELECT * FROM Orders WHERE o_orderkey = '1000-1';
 
 这一设计思想在业界大厂有着广泛运用。以**淘宝订单业务**的设计为例：
 
-![淘宝订单号设计体系](/images/OceanBase-suoyin-2.jpeg)
+<!-- ![淘宝订单号设计体系](/images/OceanBase-suoyin-2.jpeg) -->
 
 如果你仔细观察你的淘宝订单号，会发现所有历史订单的最后 6 位通常是一模一样的数字（如上图中的 `308113`）。
 - 这些特定的后置位其实映射着你作为买家（User ID）的分区拓扑规则。
@@ -128,7 +128,7 @@ SELECT * FROM Orders WHERE o_orderkey = '1000-1';
 ### 1. 全局读多写少小表最佳实践（Broadcast Table）
 分布式体系中往往存在一些脱离于分片逻辑的基准数据表：例如省市字典、国家区域（tpch 库中的 `nation`）。由于应用查询频繁执行 `JOIN` 会跨分片传递大量数据，最优解是：**采用冗余同步机制，将这类小表完整复制广播到所有的集群节点（分片）计算层内存中。**
 
-![全局表冗余复制机制](/images/OceanBase-suoyin-3.jpeg)
+<!-- ![全局表冗余复制机制](/images/OceanBase-suoyin-3.jpeg) -->
 
 ### 2. 分布式唯一索引与局部陷阱
 在分布式模型中，如果一张表通过建表 DDL `UNIQUE KEY(xxx)` 建立唯一性约束，由于索引默认是局部的（Local Index），数据库本质上**只能在自己所在的分片内保证它没有重复插入，但无法保证全局不存在重复记录**。
