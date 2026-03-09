@@ -6,7 +6,6 @@ categories: [数据库, MiniOB]
 tags: [miniob, 数据库]
 comments: true
 author: huanghuoguoguo
-yuque_url: "https://www.yuque.com/huanghuo-zcibe/miniob/qw8wbeai3g3mngbt"
 ---
 
-本文已迁移至语雀，点击标题即可跳转查看。
+本文已迁移至语雀，[点此查看](https://www.yuque.com/huanghuo-zcibe/miniob/qw8wbeai3g3mngbt)

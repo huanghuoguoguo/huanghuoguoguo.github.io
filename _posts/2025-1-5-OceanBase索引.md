@@ -1,185 +1,147 @@
 ---
 layout: post
-title: "OceanBase索引，分布式数据存储"
-date:   2025-1-5
+title: "OceanBase 与分布式数据存储：深入理解分片机制与索引设计"
+date: 2025-01-05
 categories: [数据库, 基础理论]
-tags: [OceanBase, 数据库, 底层]
+tags: [OceanBase, 分布式架构, 底层机制, 索引优化]
 comments: true
 author: huanghuoguoguo
 ---
 
-mysql通过分库分表可以实现数据的分片。像原生分布式数据库是怎么分片的呢？像oceanbase或者polardb，不需要额外的配置就实现了分片和复制，是怎么处理数据的呢？像mysql的分库分表，可以认为是做了主键的均匀hash进行映射，到表上，相当于做了一个前置hash索引，将键路由到存储数据的表上，那么原生分布式数据库怎么做索引的呢？因为他需要实现数据的自动获取或者命中索引，还是说每个节点都存储了该表的所有索引，然后查询的时候，回表的时候，如果在当前节点上就直接获取，不在当前节点就会进行转发最后再汇总？
+在传统的单机 MySQL 架构中，随着数据量的暴增，业务通常会引入“分库分表”来实现数据的分片扩展。这相当于在应用层做了一个前置的 Hash 路由，将主键均匀映射到不同的底层物理表上。
 
-<font style="color:rgb(6, 6, 7);">在分布式数据库中，分片（Sharding）是一种常见的技术，用于将数据分布到多个节点上，以提高系统的扩展性和性能。与传统的 MySQL 分库分表类似，原生分布式数据库（如 OceanBase 和 PolarDB）通过更高级的分片机制实现了数据的自动管理和高效查询。以下是这些数据库如何处理分片和索引的详细解释：</font>
+那么，对于 OceanBase 或 PolarDB 这样的**原生分布式数据库**，它们是如何在无需业务进行额外繁琐配置的情况下，自动实现数据分片、复制和路由的？它们是如何处理索引的命中与回表的？如果查询落在当前节点未能命中，架构底层又是如何进行请求转发与数据汇总的？
+
+本文将系统梳理分布式数据库中的分片机制、主键选择与索引设计策略。
 
 ---
 
-### **<font style="color:rgb(6, 6, 7);">MySQL 分库分表与原生分布式数据库的分片机制</font>**
-#### **<font style="color:rgb(6, 6, 7);">MySQL 分库分表</font>**
-<font style="color:rgb(6, 6, 7);">在 MySQL 中，分库分表是一种常见的水平扩展策略。例如，可以通过对主键进行哈希映射，将数据均匀分配到多个表或数据库中</font><font style="color:rgb(6, 6, 7);">。这种方式类似于在应用层实现了一个简单的分片机制，但需要开发者手动管理分片逻辑和查询路由。</font>
+## 一、MySQL 分库分表 vs 原生分布式分片
 
-#### **<font style="color:rgb(6, 6, 7);">OceanBase 的分片机制</font>**
-<font style="color:rgb(6, 6, 7);">OceanBase 是一种原生分布式数据库，它通过更高级的分片策略实现数据的自动管理和高效查询</font><font style="color:rgb(6, 6, 7);">：</font>
+在分布式数据库架构中，**分片（Sharding）** 是将海量数据分散到多台物理节点上以实现横向扩展（Scale-Out）的核心技术。
 
-1. **<font style="color:rgb(6, 6, 7);">数据分片（Tablet）</font>**<font style="color:rgb(6, 6, 7);">：OceanBase 将大表划分为多个较小的分片（tablet），每个分片由多个节点共同管理。这种方式不仅提高了数据处理的并行性，还通过分布式架构实现了负载均衡</font><font style="color:rgb(6, 6, 7);">。</font>
-2. **<font style="color:rgb(6, 6, 7);">哈希分片与范围分片</font>**<font style="color:rgb(6, 6, 7);">：OceanBase 支持基于哈希和范围的分片策略。哈希分片通过对数据的关键属性进行哈希运算，将数据均匀分布到不同节点；范围分片则根据数据的范围划分，适合有序数据的访问</font><font style="color:rgb(6, 6, 7);">。</font>
-3. **<font style="color:rgb(6, 6, 7);">索引管理</font>**<font style="color:rgb(6, 6, 7);">：OceanBase 在每个节点上维护局部索引，查询时会根据分片键直接定位到目标节点。如果查询涉及多个分片，OceanBase 会自动协调跨节点的查询，并在必要时进行数据汇总</font><font style="color:rgb(6, 6, 7);">。</font>
+### 1. MySQL 传统分库分表机制
+在 MySQL 体系下，开发者往往需要借助中间件（如 ShardingSphere、MyCat 等）对数据关键列（通常为主键或业务 ID）进行 Hash 或范围取模，从而将数据打散到不同的数据库实例和表中。这种做法的痛点在于：分片逻辑强侵入业务层，跨节点事务处理复杂，且动态扩缩容的运维成本极高。
 
-#### **<font style="color:rgb(6, 6, 7);">PolarDB 的分片机制</font>**
-<font style="color:rgb(6, 6, 7);">PolarDB 是另一种云原生分布式数据库，它通过以下方式实现分片</font><font style="color:rgb(6, 6, 7);">：</font>
+### 2. OceanBase 的原生分片机制
+作为原生分布式数据库，OceanBase 提供了更为高级、透明的底层分片自动化管理：
+- **数据分片单位（Tablet）**：OceanBase 将大表聚簇打散为多个较小的数据分片（Tablet），分布式架构下的多节点共同担负这些分片的存储与计算，不仅增强了并行处理能力，还天然实现了负载均衡。
+- **丰富的关联分片策略**：支持基于 Hash 分片（均匀打散）和 Range 范围分片（适合时间序/递增型数据的扫描），业务无需显式感知。
+- **局部索引与路由流转**：OceanBase 会在每个分片所在节点独立维护局部索引（Local Index）。当发起查询时，计算引擎通过预编译的执行计划，根据分片键精准定位到目标主节点。若查询不得不跨越多个分片，计算节点（SQL 层）会自动发起分布式查询计划，协调并行调度并在最终汇聚计算结果。
 
-1. **<font style="color:rgb(6, 6, 7);">哈希分片</font>**<font style="color:rgb(6, 6, 7);">：PolarDB 支持通过哈希函数对数据进行分片，例如使用 </font>`DBDISTRIBUTION BY HASH(id)`<font style="color:rgb(6, 6, 7);"> 将数据均匀分布到多个节点</font><font style="color:rgb(6, 6, 7);">。</font>
-2. **<font style="color:rgb(6, 6, 7);">索引优化</font>**<font style="color:rgb(6, 6, 7);">：PolarDB 采用了优化的索引结构（如 Lizard B+tree），通过智能分片和缓存优化减少跨节点查询的开销</font><font style="color:rgb(6, 6, 7);">。</font>
-3. **<font style="color:rgb(6, 6, 7);">动态调整</font>**<font style="color:rgb(6, 6, 7);">：PolarDB 能够根据查询模式动态调整数据分片策略，确保查询效率最大化</font><font style="color:rgb(6, 6, 7);">。</font>
+### 3. PolarDB 的分片机制设计
+作为云原生数据库的代表，PolarDB 在分片逻辑上也有其独特设计：
+- **声明式 Hash 分片**：PolarDB 支持通过 DDL 声明式分配，例如 `DBDISTRIBUTION BY HASH(id)` 即可让底层引擎将数据打散。
+- **自适应索引结构**：采用类似 **Lizard B+Tree** 的优化索引，辅以智能分片定位与多级页面缓存技术，大幅度削减跨节点只读查询的通信开销。
+- **动态负载均衡感知**：引擎自带对查询模式的感知，并在后台适时进行自动化分片迁移与流量调度。
 
-#### **<font style="color:rgb(6, 6, 7);">索引管理与查询优化</font>**
-<font style="color:rgb(6, 6, 7);">在原生分布式数据库中，索引的管理方式与传统数据库有所不同：</font>
+总结而言，相比 MySQL 外挂中间件的形式，原生分布式数据库不仅免除了业务手动调配的烦恼，更通过内置的局部索引和智能路由引擎保障了跨节点的大规模数据协作执行。
 
-1. **<font style="color:rgb(6, 6, 7);">局部索引与全局索引</font>**<font style="color:rgb(6, 6, 7);">：每个节点上维护局部索引，用于快速定位数据。对于跨节点的查询，数据库会自动协调并汇总结果</font><font style="color:rgb(6, 6, 7);">。</font>
-2. **<font style="color:rgb(6, 6, 7);">智能路由</font>**<font style="color:rgb(6, 6, 7);">：查询时，数据库会根据分片键直接定位到目标节点，避免不必要的数据传输</font><font style="color:rgb(6, 6, 7);">。</font>
-3. **<font style="color:rgb(6, 6, 7);">优化策略</font>**<font style="color:rgb(6, 6, 7);">：通过自适应分支因子、异步写入和数据压缩等技术，进一步提升索引的性能。</font>
+---
 
-<font style="color:rgb(6, 6, 7);">与 MySQL 的分库分表相比，原生分布式数据库（如 OceanBase 和 PolarDB）通过更高级的分片机制实现了数据的自动管理和高效查询。这些数据库不仅支持多种分片策略（如哈希分片和范围分片），还通过局部索引和智能路由优化查询性能。此外，它们还具备动态调整分片和索引的能力，以适应不同的数据访问模式</font><font style="color:rgb(6, 6, 7);">。</font>
+## 二、分布式场景下的主键选择痛点
 
-<font style="color:rgb(6, 6, 7);">这种自动化的分片和索引管理机制，使得原生分布式数据库在处理大规模数据时更加高效和灵活，无需开发者手动配置和管理分片逻辑。</font>
+对于主键（Primary Key），在其本质上必须是一个“全局唯一的索引”。如果我们沿用单机时代非常受欢迎的 **自增主键（Auto Increment）** 策略，在分布式环境中将会面临巨大的风险。
 
-#### <font style="color:rgb(24, 24, 24) !important;">主键选择</font>
-<font style="color:rgb(38, 38, 38);">对主键来说，要保证在所有分片中都唯一，它本质上就是一个全局唯一的索引。如果用大部分同学喜欢的自增作为主键，就会发现存在很大的问题。</font>
+### 分片下的自增冲突
+自增 ID 最大的问题在于，它往往无法在数据插入前就在应用层确切感知其值，必须依赖单台数据库节点执行完 `last_insert_id()` 以后方可确定。这意味着：**如果各个数据分片独立维护自增逻辑，必定会出现重复的自增 ID 存在于不同分片中**。
 
-<font style="color:rgb(38, 38, 38);">因为自增并不能在插入前就获得值，而是要通过填 NULL 值，然后再通过函数 last_insert_id()获得自增的值。所以，如果在每个分片上通过自增去实现主键，可能会出现同样的自增值存在于不同的分片上。</font>
+以电商的订单表 `orders` 为例（分片键设定为 `O_CUSTKEY`，主键为 `O_ORDERKEY`）：
 
-<font style="color:rgb(38, 38, 38);">比如，对于电商的订单表 orders，其表结构如下（分片键是o_custkey，表的主键是o_orderkey）：</font>
-
-```plain
+```sql
 CREATE TABLE `orders` (
   `O_ORDERKEY` int NOT NULL auto_increment,
   `O_CUSTKEY` int NOT NULL,
   `O_ORDERSTATUS` char(1) NOT NULL,
   `O_TOTALPRICE` decimal(15,2) NOT NULL,
   `O_ORDERDATE` date NOT NULL,
-  `O_ORDERPRIORITY` char(15) NOT NULL,
-  `O_CLERK` char(15) NOT NULL,
-  `O_SHIPPRIORITY` int NOT NULL,
+  ...
   `O_COMMENT` varchar(79) NOT NULL,
   PRIMARY KEY (`O_ORDERKEY`),
   KEY (`O_CUSTKEY`)
-  ......
-) ENGINE=InnoDB
+) ENGINE=InnoDB;
 ```
 
-<font style="color:rgb(38, 38, 38);">如果把 o_orderkey 设计成上图所示的自增，那么很可能 o_orderkey 同为 1 的记录在不同的分片出现，如下图所示：</font>
+如果将 `O_ORDERKEY` 设为自增，则“订单编号 = 1” 的记录可能在分片 A 和分片 B 中都被独立生成并存储。
 
-![](https://huanghuoguoguo.github.io/images/OceanBase-suoyin-1.jpeg)
+![OceanBase 自增主键冲突分析](/images/OceanBase-suoyin-1.jpeg)
 
-**<font style="color:rgb(38, 38, 38);">所以，在分布式数据库架构下，尽量不要用自增作为表的主键</font>**<font style="color:rgb(38, 38, 38);">：自增性能很差、安全性不高、不适用于分布式架构。</font>
+**最佳实践**：分布式架构下，严禁使用底层数据库的隐式自增机制作为表的主键。主键设计的主流标准应当是：**在业务侧通过发号器生成有序的全局唯一键（如优化后的高低位 UUID、雪花算法 Snowflake 等）**。
 
-<font style="color:rgb(38, 38, 38);">讲到这儿，我们已经说明白了“自增主键”的所有问题，那么该如何设计主键呢？依然还是用全局唯一的键作为主键，比如 MySQL 自动生成的有序 UUID；业务生成的全局唯一键（比如发号器）；或者是开源的 UUID 生成算法，比如雪花算法（但是存在时间回溯的问题）。</font>
+---
 
-<font style="color:rgb(38, 38, 38);">总之，</font>**<font style="color:rgb(38, 38, 38);">用有序的全局唯一替代自增，是这个时代数据库主键的主流设计标准</font>**<font style="color:rgb(38, 38, 38);">，如果你还停留在用自增做主键，或许代表你已经落后于时代发展了。</font>
+## 三、分布式索引的降维打击：如何优雅地路由查询？
 
-#### <font style="color:rgb(24, 24, 24) !important;">索引设计</font>
-<font style="color:rgb(38, 38, 38);">通过分片键可以把 SQL 查询路由到指定的分片，但是在现实的生产环境中，业务还要通过其他的索引访问表。</font>
+在分布式架构中，一个颠扑不破的真理是：**业务的绝大部分高频请求，应当能够通过分片键（Sharding Key）精确定位到仅仅 1 个底层分片上。**
 
-<font style="color:rgb(38, 38, 38);">还是以前面的表 orders 为例，如果业务还要根据 o_orderkey 字段进行查询，比如查询订单 ID 为 1 的订单详情：</font>
+### 1. 跨分片查询的代价
+假设我们的订单表以买家 ID (`O_CUSTKEY`) 为分区键，但运营系统发起了一个按照订单号 (`O_ORDERKEY`) 检索详情的诉求：
 
-<font style="color:rgb(89, 89, 89);background-color:rgb(249, 249, 249);">SELECT * FROM orders WHERE o_orderkey = 1</font>
+```sql
+SELECT * FROM orders WHERE o_orderkey = 1;
+```
+由于条件不涉及分片键，分布式计算引擎不得不向底部所有的 1000 个分片全量下发 RPC 查询请求，再等待汇总。这是典型的并发灾难。
 
-<font style="color:rgb(38, 38, 38);">我们可以看到，由于分片规则不是分片键，所以需要查询 4 个分片才能得到最终的结果，如果下面有 1000 个分片，那么就需要执行 1000 次这样的 SQL，这时性能就比较差了。</font>
+为了抹平这种全分片扫描（Full Partition Scan）的低效，业界探索出了空间换时间的冗余做法：
 
-<font style="color:rgb(38, 38, 38);">但是，我们知道 o_orderkey 是主键，应该只有一条返回记录，也就是说，o_orderkey 只存在于一个分片中。这时，可以有以下两种设计：</font>
+### 2. 传统方案：异构索引表映射
+通过监听主表的变更，异步建立一张极小的**索引映射表**：
 
-+ <font style="color:rgb(38, 38, 38);">同一份数据，表 orders 根据 o_orderkey 为分片键，再做一个分库分表的实现；</font>
-+ <font style="color:rgb(38, 38, 38);">在索引中额外添加分片键的信息。</font>
-
-<font style="color:rgb(38, 38, 38);">这两种设计的本质都是通过冗余实现空间换时间的效果，否则就需要扫描所有的分片，当分片数据非常多，效率就会变得极差。</font>
-
-<font style="color:rgb(38, 38, 38);">而第一种做法通过对表进行冗余，对于 o_orderkey 的查询，只需要在 o_orderkey = 1的分片中直接查询就行，效率最高，但是设计的缺点又在于冗余数据量太大。</font>
-
-<font style="color:rgb(38, 38, 38);">所以，改进的做法之一是实现一个</font>**<font style="color:rgb(38, 38, 38);">索引表</font>**<font style="color:rgb(38, 38, 38);">，表中只包含 o_orderkey 和分片键 o_custkey，如：</font>
-
-```plain
-CREATE TABLE idx_orderkey_custkey （
-  o_orderkey INT
+```sql
+CREATE TABLE idx_orderkey_custkey (
+  o_orderkey INT,
   o_custkey INT,
   PRIMARY KEY (o_orderkey)
-)
+);
 ```
 
-<font style="color:rgb(38, 38, 38);">如果这张索引表很大，也可以将其分库分表，但是它的分片键是 o_orderkey，如果这时再根据字段 o_orderkey 进行查询，可以进行类似二级索引的回表实现：先通过查询索引表得到记录 o_orderkey = 1 对应的分片键 o_custkey 的值，接着再根据 o_custkey 进行查询，最终定位到想要的数据，如：</font>
+查询时，将其拆分为两步回表操作：
+1. `SELECT o_custkey FROM idx_orderkey_custkey WHERE o_orderkey = 1;`
+2. 拿到分片信息后，带着分片键去主表查询。
 
-```plain
-SELECT * FROM orders WHERE o_orderkey = 1
-=>
-# step 1
-SELECT o_custkey FROM idx_orderkey_custkey 
-WHERE o_orderkey = 1
-# step 2
-SELECT * FROM orders 
-WHERE o_custkey = ? AND o_orderkey = 1
+这种设计虽然避免了全分片扫，但这增加了事务的复杂性与多余的网络交互开销。
+
+### 3. 最优方案：基于编码规则的主键内嵌分片键
+分布式架构最优雅的设计，是将**路由信息直接编码到你将要高频查询的列中**。
+
+假设我们将订单的主键 `O_ORDERKEY` 定义为一个字符串，其实际构造为：`业务原始订单号 + 分片键信息`。
+比如：`o_orderkey = string(原始订单ID + o_custkey)`。
+
+此时查询：
+```sql
+SELECT * FROM Orders WHERE o_orderkey = '1000-1';
 ```
+在解析语法树的瞬间，引擎代理层（或路由网关）直接通过后缀 `-1` 就明白，这条记录 100% 毫无悬念地躺在“分片 1”的机器上，只需将其单向转发给对应的分片，无需任何映射与猜测。一次查询直达目标。
 
-<font style="color:rgb(38, 38, 38);">这个例子是将一条 SQL 语句拆分成 2 条 SQL 语句，但是拆分后的 2 条 SQL 都可以通过分片键进行查询，这样能保证只需要在单个分片中完成查询操作。不论有多少个分片，也只需要查询 2个分片的信息，这样 SQL 的查询性能可以得到极大的提升。</font>
+这一设计思想在业界大厂有着广泛运用。以**淘宝订单业务**的设计为例：
 
-<font style="color:rgb(38, 38, 38);">通过</font>**<font style="color:rgb(38, 38, 38);">索引表</font>**<font style="color:rgb(38, 38, 38);">的方式，虽然存储上较冗余全表容量小了很多，但是要根据另一个分片键进行数据的存储，依然显得不够优雅。</font>
+![淘宝订单号设计体系](/images/OceanBase-suoyin-2.jpeg)
 
-<font style="color:rgb(38, 38, 38);">因此，最优的设计，不是创建一个索引表，而是将分片键的信息保存在想要查询的列中，这样通过查询的列就能直接知道所在的分片信息。</font>
+如果你仔细观察你的淘宝订单号，会发现所有历史订单的最后 6 位通常是一模一样的数字（如上图中的 `308113`）。
+- 这些特定的后置位其实映射着你作为买家（User ID）的分区拓扑规则。
+- 数据引擎通过解析它，瞬间便能圈定用户订单所在物理分片。
 
-<font style="color:rgb(38, 38, 38);">如果我们将订单表 orders 的主键设计为一个字符串，这个字符串中最后一部分包含分片键的信息，如：</font>
+---
 
-<font style="color:rgb(89, 89, 89);background-color:rgb(249, 249, 249);">o_orderkey = string（o_orderkey + o_custkey）</font>
+## 四、全局字典表与分布式唯一索引
 
-<font style="color:rgb(38, 38, 38);">那么这时如果根据 o_orderkey 进行查询：</font>
+### 1. 全局读多写少小表最佳实践（Broadcast Table）
+分布式体系中往往存在一些脱离于分片逻辑的基准数据表：例如省市字典、国家区域（tpch 库中的 `nation`）。由于应用查询频繁执行 `JOIN` 会跨分片传递大量数据，最优解是：**采用冗余同步机制，将这类小表完整复制广播到所有的集群节点（分片）计算层内存中。**
 
-```plain
-SELECT * FROM Orders
-WHERE o_orderkey = '1000-1';
-```
+![全局表冗余复制机制](/images/OceanBase-suoyin-3.jpeg)
 
-<font style="color:rgb(38, 38, 38);">由于字段 o_orderkey 的设计中直接包含了分片键信息，所以我们可以直接知道这个订单在分片1 中，直接查询分片 1 就行。</font>
+### 2. 分布式唯一索引与局部陷阱
+在分布式模型中，如果一张表通过建表 DDL `UNIQUE KEY(xxx)` 建立唯一性约束，由于索引默认是局部的（Local Index），数据库本质上**只能在自己所在的分片内保证它没有重复插入，但无法保证全局不存在重复记录**。
 
-<font style="color:rgb(38, 38, 38);">同样地，在插入时，由于可以知道插入时 o_custkey 对应的值，所以只要在业务层做一次字符的拼接，然后再插入数据库就行了。</font>
+因此，除非数据库原生支持极高一致性的 Global Unique Index（但往往带来写入可用性剧降），否则在设计时同样应当依托发号器的 UUID 全局唯一来替代数据库层面弱相关的局部约束。业务永远不知道某天系统负载增加，强依赖数据库 `UNIQUE` 可能成为拖垮整体吞吐的死穴。
 
-<font style="color:rgb(38, 38, 38);">这样的实现方式较冗余表和索引表的设计来说，效率更高，查询可以提前知道数据对应的分片信息，只需 1 次查询就能获取想要的结果。</font>
+---
 
-<font style="color:rgb(38, 38, 38);">这样实现的缺点是，主键值会变大一些，存储也会相应变大。但只要主键值是有序的，插入的性能就不会变差。而通过在主键值中保存分片信息，却可以大大提升后续的查询效率，这样空间换时间的设计，总体上看是非常值得的。</font>
+## 五、核心要点总结
 
-<font style="color:rgb(38, 38, 38);">当然，这里我们谈的设计都是针对于唯一索引的设计，如果是非唯一的二级索引查询，那么非常可惜，依然需要扫描所有的分片才能得到最终的结果，如：</font>
+综上所述，无论是 OceanBase、PolarDB 还是 TiDB 这样的新生代原生分布式数据库，在享受它们透明伸缩和容灾能力的同时，我们在表设计之时务必深刻理解以下几点准则：
 
-```plain
-SELECT * FROM Orders
-WHERE o_orderate >= ? o_orderdate < ?
-```
-
-<font style="color:rgb(38, 38, 38);">因此，再次提醒你，分布式数据库架构设计的要求是</font>**<font style="color:rgb(38, 38, 38);">业务的绝大部分请求能够根据分片键定位到 1 个分片上。</font>**
-
-<font style="color:rgb(38, 38, 38);">如果业务大部分请求都需要扫描所有分片信息才能获得最终结果，那么就不适合进行分布式架构的改造或设计。</font>
-
-<font style="color:rgb(38, 38, 38);">最后，我们再来回顾下淘宝用户订单表的设计：</font>
-
-![](https://huanghuoguoguo.github.io/images/OceanBase-suoyin-2.jpeg)
-
-<font style="color:rgb(38, 38, 38);">上图是我的淘宝订单信息，可以看到，订单号的最后 6 位都是 308113，所以可以大概率推测出：</font>
-
-+ <font style="color:rgb(38, 38, 38);">淘宝订单表的分片键是用户 ID；</font>
-+ <font style="color:rgb(38, 38, 38);">淘宝订单表，订单表的主键包含用户 ID，也就是分片信息。这样通过订单号进行查询，可以获得分片信息，从而查询 1 个分片就能得到最终的结果。</font>
-
-#### <font style="color:rgb(24, 24, 24) !important;">全局表</font>
-<font style="color:rgb(38, 38, 38);">在分布式数据库中，有时会有一些无法提供分片键的表，但这些表又非常小，一般用于保存一些全局信息，平时更新也较少，绝大多数场景仅用于查询操作。</font>
-
-<font style="color:rgb(38, 38, 38);">例如 tpch 库中的表 nation，用于存储国家信息，但是在我们前面的 SQL 关联查询中，又经常会使用到这张表，对于这种全局表，可以在每个分片中存储，这样就不用跨分片地进行查询了。如下面的设计：</font>
-
-![](https://huanghuoguoguo.github.io/images/OceanBase-suoyin-3.jpeg)
-
-#### <font style="color:rgb(24, 24, 24) !important;">唯一索引</font>
-<font style="color:rgb(38, 38, 38);">最后我们来谈谈唯一索引的设计，与主键一样，如果只是通过数据库表本身唯一约束创建的索引，则无法保证在所有分片中都是唯一的。</font>
-
-<font style="color:rgb(38, 38, 38);">所以，在分布式数据库中，唯一索引一样要通过类似主键的 UUID 的机制实现，用全局唯一去替代局部唯一，但实际上，即便是单机的 MySQL 数据库架构，我们也推荐使用全局唯一的设计。因为你不知道，什么时候，你的业务就会升级到全局唯一的要求了。</font>
-
-#### <font style="color:rgb(24, 24, 24) !important;">总结</font>
-<font style="color:rgb(38, 38, 38);">今天介绍了非常重要的分布式数据库索引设计，内容非常干货，是分布式架构设计的重中之重，建议反复阅读，抓住本文的重点，总结来说：</font>
-
-+ <font style="color:rgb(38, 38, 38);">分布式数据库主键设计使用有序 UUID，全局唯一；</font>
-+ <font style="color:rgb(38, 38, 38);">分布式数据库唯一索引设计使用 UUID 的全局唯一设计，避免局部索引导致的唯一问题；</font>
-+ <font style="color:rgb(38, 38, 38);">分布式数据库唯一索引若不是分片键，则可以在设计时保存分片信息，这样查询直接路由到一个分片即可；</font>
-+ <font style="color:rgb(38, 38, 38);">对于分布式数据库中的全局表，可以采用冗余机制，在每个分片上进行保存。这样能避免查询时跨分片的查询。</font>
-
+1. **分布式拒接业务自增主键**：必须采用雪花算法或高低位 UUID，从生成源头杜绝分布式主键冲撞。
+2. **警惕数据库表级别 UNIQUE 唯一约束**：意识到分布式局部索引（Local Index）带来的伪唯一性，全局幂等与唯一性应当多借助分布式防重服务。
+3. **“内聚”分片策略**：如果某列将作为高并发的点查条件（而不是范围扫），请穷尽办法将分片相关属性通过字符串拼接手段，“硬编码”嵌入其中（如淘宝订单号末尾）。
+4. **小体积高频关联字典表**：拥抱架构的“冗余原则”，将全局维度表分发至全部节点。
