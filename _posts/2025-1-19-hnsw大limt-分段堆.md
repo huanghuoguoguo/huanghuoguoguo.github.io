@@ -6,7 +6,6 @@ categories: [数据库, 核心算法]
 tags: [向量索引, hnsw, 性能调优, C++]
 comments: true
 author: huanghuoguoguo
-yuque_url: "https://www.yuque.com/huanghuo-zcibe/ye6rw9/eiu19z5a3b7nxdn8"
 ---
 
 HNSW（Hierarchical Navigable Small World graphs，分层可导航小世界图）可以说是目前工业界影响力最大、应用最广的基于图的近似最近邻搜索（ANN）算法。它以极快的搜索速度和出色的召回率著称。

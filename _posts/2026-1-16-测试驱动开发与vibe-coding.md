@@ -1,7 +1,7 @@
 ---
 layout: post
 title: "测试驱动AI Coding：让AI开发从混沌走向有序"
-date: 2025-01-16
+date: 2026-01-16
 categories: [软件工程, 研发之道]
 tags: [编程实践, 开发方法, AI, TDD]
 comments: true

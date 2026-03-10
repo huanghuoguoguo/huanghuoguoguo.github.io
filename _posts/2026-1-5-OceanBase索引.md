@@ -1,7 +1,7 @@
 ---
 layout: post
 title: "OceanBase 与分布式数据存储：深入理解分片机制与索引设计"
-date: 2025-01-05
+date: 2026-01-05
 categories: [数据库, 基础理论]
 tags: [OceanBase, 分布式架构, 底层机制, 索引优化]
 comments: true

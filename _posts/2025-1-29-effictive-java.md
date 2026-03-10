@@ -6,10 +6,15 @@ categories: [后端开发, 读书笔记]
 tags: [java, 读书笔记]
 comments: true
 author: huanghuoguoguo
-yuque_url: "https://www.yuque.com/huanghuo-zcibe/ye6rw9/xwzgy4fkrlg9ksds"
 ---
 
-很早之前看的，有没有留下良好的习惯？似乎也没有。这本书描述的是写 Java 时的经验之道，并给出实现细节。没有多少实践、对比、挫折，自然不能体会。不过重新整理一遍，至少把每章的核心要点留下来，以后踩坑了能快速对照。
+很早之前看的这本书，当时觉得条条有理，但合上书该怎么写还是怎么写。后来在项目里被包装类型的 GC 风暴教训过一次（见 [int[] 遍历比 Integer[] 快近 5 倍：从内存布局到 CPU Cache 的实证](/2026/03/10/Java基本类型vs包装类型/)），回头翻书才发现——条目 6"避免创建不必要的对象"、条目 61"基本类型优于装箱类型"，白纸黑字写在那里，之前就是没感觉。
+
+或许不是因为没读进去，而是还没有被足够多的 bug 教训过。等教训攒够了，这些条目自然会变成条件反射。
+
+这篇笔记不打算逐章摘要——12 章 90 条，每条一句话和翻目录没区别。只挑四个我真正有感触的主题展开，其余章节用一张表一笔带过。
+
+<!-- more -->
 
 ---
 
@@ -24,15 +29,46 @@ yuque_url: "https://www.yuque.com/huanghuo-zcibe/ye6rw9/xwzgy4fkrlg9ksds"
 | 对象池（仅重量级资源） | 线程、连接、DirectByteBuffer 的创建成本远高于内存成本 | 每次 `new Thread` 或 `new Socket`，QPS 一高 CPU 花在内核调度 |
 | try-with-resources | 保证任何退出路径都自动 `.close()`，保持异常原始栈 | finally 里也抛异常时第一个异常被吞；高并发下文件句柄耗尽 |
 
-## 第 3 章 对所有对象都通用的方法（条目 10-14）
+### 静态工厂 vs 构造器：一个例子
 
-重写 `equals`、`hashCode`、`toString`、`Comparable` 的避坑清单。核心原则：`equals` 和 `hashCode` 必须一致，违反这条约定会导致 HashMap/HashSet 行为不可预期。
+```java
+// 构造器：没有语义，看不出在干什么
+new BigInteger(String, int)
+
+// 静态工厂：有名字，意图清晰
+BigInteger.probablePrime(int, Random)
+```
+
+静态工厂的隐藏好处：可以返回缓存的实例。`Boolean.valueOf(true)` 永远返回同一个对象，而 `new Boolean(true)` 每次在堆上分配。这和条目 6"避免创建不必要的对象"直接相关——在 [包装类型的性能实测](/2026/03/10/Java基本类型vs包装类型/) 里可以看到，一个 `Integer` 对象 16 字节（对象头 12B + value 4B），400 万个 `Integer` 比 400 万个 `int` 多吃 63MB 内存，遍历慢近 5 倍。**对象创建不是免费的，在热路径上必须精打细算。**
+
+### Builder 模式的"半初始化"陷阱
+
+```java
+// 无参构造 + setter：对象在 set 完之前处于不一致状态
+NutritionFacts cocaCola = new NutritionFacts();
+cocaCola.setServingSize(240);
+cocaCola.setServings(8);
+// 如果这里另一个线程读了 cocaCola，calories 还是 0
+cocaCola.setCalories(100);
+
+// Builder：对象要么完整，要么不存在
+NutritionFacts cocaCola = new NutritionFacts.Builder(240, 8)
+    .calories(100)
+    .sodium(35)
+    .build(); // build() 里做参数校验，不合法就抛异常
+```
+
+Builder 还有一个好处：`build()` 返回的对象可以是不可变的。不可变对象天生线程安全，不需要同步——这和第 4 章"最小可变性"以及第 11 章的并发安全直接衔接。
+
+---
 
 ## 第 4 章 类和接口（条目 15-25）
 
 最小可变性、接口优于抽象类、组合优于继承——设计"可扩展又不可滥用"的 API。
 
-三种语言的对比：
+读这章的时候自然会想到一个问题：这些原则在其他语言里是怎么落地的？Java 靠的是程序员自觉遵守，有些语言直接在语言层面强制了。
+
+### 三种语言的对比
 
 | 维度 | Java | Go | Rust |
 |------|------|----|------|
@@ -40,41 +76,127 @@ yuque_url: "https://www.yuque.com/huanghuo-zcibe/ye6rw9/xwzgy4fkrlg9ksds"
 | 接口 vs 抽象类 | 单继承，接口 + default 方法 | 只有 interface，隐式实现 | trait，可带默认实现，支持静态/动态派发 |
 | 组合 vs 继承 | 委托/代理模式复用行为 | 嵌入（embedding）是"字段提升"语法糖 | 字段/泛型包裹，`#[derive]` 自动实现 |
 
-三者都把"组合优于继承"写进了语言设计，只是约束力度 Rust > Java > Go。
+三者都把"组合优于继承"写进了语言设计，只是约束力度 Rust > Go > Java。Java 给你 `extends` 然后告诉你别用，Go 直接不给你继承，Rust 更进一步——连可变性都编译期管死。
 
-Rust 的**零成本抽象**：泛型单态化生成专用代码，迭代器链编译后展开成单循环，所有权/借用检查只在编译期——"写起来像高层语言，运行起来像手写汇编"。
+> 更详细的跨语言并发模型对比，见 [并发模型与语言选型：从 Java 出发看各语言的并发哲学](/2026/03/09/并发模型与语言选型/)。
 
-## 第 5 章 泛型（条目 26-33）
+Rust 的**零成本抽象**值得单独提一嘴：泛型单态化生成专用代码，迭代器链编译后展开成单循环，所有权/借用检查只在编译期——"写起来像高层语言，运行起来像手写汇编"。这和 Effective Java 追求的目标其实一样：用好语言特性减少运行时开销。只是 Java 受限于泛型擦除和对象模型，很多时候需要靠工程手段弥补（比如用 Eclipse Collections 的 `IntArrayList` 绕过 `List<int>` 不存在的问题）。
 
-消除 raw type、通配符 PECS（Producer-Extends, Consumer-Super）、异构容器——写出类型安全且灵活的泛型代码。
+### 组合优于继承：为什么
 
-## 第 6 章 枚举和注解（条目 34-41）
+```java
+// 继承：HashSet 的 addAll() 内部会调 add()，重写 add() 时计数会重复
+public class InstrumentedHashSet<E> extends HashSet<E> {
+    private int addCount = 0;
 
-用 enum 代替常量、EnumSet/EnumMap 做位运算、注解做元数据——可读可维护的语法糖。
+    @Override public boolean add(E e) {
+        addCount++;
+        return super.add(e);
+    }
 
-## 第 7 章 Lambda 和 Stream（条目 42-48）
+    @Override public boolean addAll(Collection<? extends E> c) {
+        addCount += c.size();
+        return super.addAll(c); // 内部调 add()，addCount 被加了两次！
+    }
+}
 
-lambda 优于匿名类、方法引用优于 lambda、无副作用 Stream、慎用并行——函数式写法"爽而不翻车"。
+// 组合：不依赖父类实现细节，行为完全可预测
+public class InstrumentedSet<E> extends ForwardingSet<E> {
+    private int addCount = 0;
 
-## 第 8 章 方法（条目 49-56）
+    @Override public boolean add(E e) {
+        addCount++;
+        return super.add(e); // 委托给内部 Set，不怕实现变动
+    }
 
-参数校验、防御性拷贝、慎用重载与可变参数、Optional 返回、写 Javadoc——方法设计"表里一致"。
+    @Override public boolean addAll(Collection<? extends E> c) {
+        addCount += c.size();
+        return super.addAll(c); // ForwardingSet.addAll() 逐个调自己的 add()
+    }
+}
+```
 
-## 第 9 章 通用编程（条目 57-68）
+继承的问题不是"功能不够"，而是子类和父类的实现细节耦合太深。父类的 `addAll()` 内部调不调 `add()`，是实现细节，不是契约——一旦父类改了实现，子类就炸。组合把这层耦合切断了。
 
-最小化作用域、for-each 优先、基本类型优于装箱、接口优于反射、遵守命名约定——日常编码习惯养成。
+---
 
-## 第 10 章 异常（条目 69-77）
+## 第 9 章（条目 61）× 第 2 章（条目 6）：基本类型优于装箱类型
 
-异常只用于异常情况、受检/运行时异常分层、标准异常优先、失败原子性——异常语义清晰。
+这一条单独拎出来，是因为我在项目里真的被它教训过。
+
+条目 61 说：**基本类型优于装箱类型**。条目 6 说：**避免创建不必要的对象**。两条加在一起的意思就是——在性能敏感的代码里，`Double` 和 `double` 不是一回事。
+
+```java
+// 反例：自动装箱的隐形代价
+Long sum = 0L;
+for (long i = 0; i < Integer.MAX_VALUE; i++) {
+    sum += i; // 每次 += 都触发自动拆箱和装箱，创建约 2^31 个 Long 对象
+}
+```
+
+这段代码功能上没问题，但 `Long sum` 改成 `long sum`，性能差距是数量级的。
+
+更深入的分析见 [int[] 遍历比 Integer[] 快近 5 倍：从内存布局到 CPU Cache 的实证](/2026/03/10/Java基本类型vs包装类型/)，那篇文章用 benchmark 和 `perf stat` 实测了包装类型的真实代价：
+
+- **内存膨胀 5 倍**：`int` 4 字节，`Integer` 对象 16 字节 + 引用 4 字节 ≈ 20 字节
+- **顺序遍历慢 4.8 倍**：`Integer[]` 破坏空间局部性，CPU prefetcher 失效，L1/L2 cache miss 频发
+- **指针追逐**：`int[]` 连续平铺像 C 数组，`Integer[]` 是指针数组 + 散落的堆对象，每次访问多一跳
+
+在那个存储性能指标采集系统里，把 `MetricsSnapshot` 的指标字段从 `Double`/`Long` 改成 `double`/`long`，配合对象缓存复用，单周期延迟从 100ms 降到 60ms。**Effective Java 条目 6 和 61 不是面试八股，是真能省钱的。**
+
+---
 
 ## 第 11 章 并发（条目 78-84）
 
-同步访问共享可变数据、避免过度同步、Executor 优于 Thread、并发工具优于 wait/notify——并发安全又高效。
+同步访问共享可变数据、避免过度同步、Executor 优于 Thread、并发工具优于 wait/notify——这些条目在 [《Java 并发编程的艺术》读书笔记](/2025/02/13/java并发编程的艺术/) 里有更底层的展开，这里只聊几个和 Effective Java 特别相关的点。
 
-## 第 12 章 序列化（条目 85-90）
+### 条目 78：同步访问共享可变数据
 
-Java 原生序列化是历史包袱，用 JSON/ProtoBuf 或序列化代理，降低安全与兼容性风险。
+```java
+// 反例：没有同步，另一个线程可能永远看不到 stopRequested 变为 true
+private static boolean stopRequested;
+
+// 修复方案一：volatile（保证可见性）
+private static volatile boolean stopRequested;
+
+// 修复方案二：AtomicBoolean（可见性 + 原子性）
+private static final AtomicBoolean stopRequested = new AtomicBoolean(false);
+```
+
+`volatile` 保证可见性但不保证原子性。如果只是一个 boolean 标志位，`volatile` 够用；如果是 `count++` 这种复合操作，必须用 `AtomicLong` 或加锁。
+
+这背后的原理是 JMM（Java Memory Model）的 happens-before 关系——在 [并发编程的艺术](/2025/02/13/java并发编程的艺术/) 里从 CPU 缓存一致性协议和内存屏障的角度有更详细的拆解。Effective Java 告诉你"要同步"，《并发编程的艺术》告诉你"为什么不同步就会出问题"。
+
+### 条目 80：Executor 优于 Thread
+
+```java
+// 反例：每个任务一个线程，QPS 高时线程爆炸
+new Thread(task).start();
+
+// 正确做法：线程池复用
+ExecutorService exec = Executors.newFixedThreadPool(nThreads);
+exec.submit(task);
+```
+
+但 `Executors.newFixedThreadPool` 和 `newCachedThreadPool` 各有陷阱——前者队列无界可能 OOM，后者线程数无上限可能耗尽系统资源。生产环境应该用 `ThreadPoolExecutor` 显式指定核心参数。
+
+在前面提到的指标采集系统里，最终用的是 `CompletableFuture` + 自定义线程池做分片并行计算，配合 `StampedLock` 做读多写少场景的锁优化。这些都是 Effective Java 第 11 章条目的直接应用。
+
+---
+
+## 其余章节速览
+
+以下章节没有深入展开，用一张表留个索引，踩坑时回来查。
+
+| 章节 | 主题 | 核心要点 |
+|------|------|---------|
+| 第 3 章（条目 10-14） | 通用方法 | `equals` 和 `hashCode` 必须一致，违反会导致 HashMap/HashSet 行为不可预期 |
+| 第 5 章（条目 26-33） | 泛型 | 消除 raw type、PECS 原则（Producer-Extends, Consumer-Super）、异构容器 |
+| 第 6 章（条目 34-41） | 枚举和注解 | 用 enum 代替 int 常量、EnumSet/EnumMap 代替位运算 |
+| 第 7 章（条目 42-48） | Lambda 和 Stream | 方法引用优于 lambda、Stream 无副作用、慎用并行流 |
+| 第 8 章（条目 49-56） | 方法设计 | 参数校验、防御性拷贝、慎用重载与可变参数、Optional 返回 |
+| 第 10 章（条目 69-77） | 异常 | 异常只用于异常情况、受检/运行时异常分层、失败原子性 |
+| 第 12 章（条目 85-90） | 序列化 | Java 原生序列化是历史包袱，用 JSON/ProtoBuf 替代 |
 
 ---
 
@@ -107,7 +229,7 @@ Java 原生序列化是历史包袱，用 JSON/ProtoBuf 或序列化代理，降
 | 并发问题 | `jstack` 线程快照、死锁检测、JFR 的锁竞争事件 | 条目 78-84（并发章节） |
 | 序列化安全 | 依赖扫描（CVE 数据库）、反序列化攻击检测 | 条目 85-90（序列化章节） |
 
-像 jps/jstat/jmap/jstack/JFR 这套基础的 JVM 诊断工具链，和 Effective Java 的并发、对象创建章节是直接对应的。之前遇到时可能只是记了工具名，现在结合这些底层机制，才理解它们各自在观测什么。
+像 jps/jstat/jmap/jstack/JFR 这套基础的 JVM 诊断工具链，和 Effective Java 的并发、对象创建章节是直接对应的。在 [包装类型性能实测](/2026/03/10/Java基本类型vs包装类型/) 那篇文章里，就是用 MAT 分析堆内存才定位到 `java.lang.Double` 是分配大户的。
 
 ### 测试：契约验证
 
@@ -138,4 +260,4 @@ Java 原生序列化是历史包袱，用 JSON/ProtoBuf 或序列化代理，降
 IDE 实时检查 → 编译期静态分析 → 单元测试 → CI 流水线 → Code Review → 运行时监控 → 线上事故
 ```
 
-越靠前发现问题，修复成本越低。Effective Java 的 90 条建议，大部分都可以在前四个阶段被自动化地观测到。剩下的靠人的判断和经验——而经验，就是踩过坑之后回头翻书时那种"原来如此"的感觉。开头说"没有留下良好的习惯"，或许不是因为没读进去，而是还没有被足够多的 bug 教训过。等教训攒够了，这些条目自然会变成条件反射。
+越靠前发现问题，修复成本越低。Effective Java 的 90 条建议，大部分都可以在前四个阶段被自动化地观测到。剩下的靠人的判断和经验——而经验，就是踩过坑之后回头翻书时那种"原来如此"的感觉。

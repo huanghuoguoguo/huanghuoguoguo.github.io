@@ -6,7 +6,6 @@ categories: [后端开发, 架构思考]
 tags: [spring, java, 框架设计, 实习反思]
 comments: true
 author: huanghuoguoguo
-yuque_url: "https://www.yuque.com/huanghuo-zcibe/ye6rw9/vvzbf13m59my2495"
 ---
 
 之前我读《Spring Framework》相关书籍时，只看了一半进度，且感触不深。当时看着源码里繁复的 `BeanFactory`、`ApplicationContext` 以及各种后缀为 `Processor` 的类，觉得过于啰嗦——为什么一个 Bean 的创建要经过 `BeanDefinition` 解析、`BeanFactoryPostProcessor` 修改元数据、实例化、属性填充、`BeanPostProcessor` 前后置处理、初始化回调这么长的链条？为什么 `ApplicationContext` 要在 `BeanFactory` 之上又包一层事件机制、资源加载、国际化？这些层层包裹的抽象看上去只是在制造复杂度。
