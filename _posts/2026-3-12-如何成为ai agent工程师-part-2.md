@@ -5,7 +5,7 @@ categories: [AI, 工程实践]
 tags: [AI Agent, Harness Engineering, Context Engineering, Codex, 工程系统]
 ---
 
-这是这个系列的第二部分。
+这是这个系列的第二部分。先说明一下：**这一篇的核心内容，主要整理自小红书作者 `ody` 对 `sysls` 那篇文章的转述，我基本保留了原意，只做了 Markdown 化、结构整理和少量表达顺序调整。**
 
 第一部分讲的是个人开发者如何把 agent 用好：从最小配置出发，通过上下文控制、rules 和 skills，把 agent 逐步训练成“按你的方式工作”的工程搭档。
 
