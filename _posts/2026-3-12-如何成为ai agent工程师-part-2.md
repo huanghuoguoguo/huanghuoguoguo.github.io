@@ -1,5 +1,5 @@
 ---
-title: "如何成为 AI Agent 工程师（二）：Harness Engineering 与系统化实践"
+title: "[转] 如何成为 AI Agent 工程师（二）：Harness Engineering 与系统化实践"
 date: 2026-03-12
 categories: [AI, 工程实践]
 tags: [AI Agent, Harness Engineering, Context Engineering, Codex, 工程系统]
