@@ -7,18 +7,15 @@
     "ENABLE_TOOL_SEARCH": "1",
     "ANTHROPIC_BASE_URL": "https://coding.dashscope.aliyuncs.com/apps/anthropic",
     "ANTHROPIC_AUTH_TOKEN": "sk-sp-52162f2bde124296b27b3a615301e94d",
-    "ANTHROPIC_MODEL": "qwen3.5-plus",
-    "ANTHROPIC_CONTEXT_WINDOW": "1000000",
-    "ANTHROPIC_MAX_TOKENS": "65536"
+    "ANTHROPIC_MODEL": "glm-5"
   },
   "permissions": {
     "allow": [
       "Bash(*)",
       "WebSearch",
       "WebFetch(domain:github.com)",
-      "WebFetch(domain:docs.trychroma.com)",
-      "WebFetch(domain:docs.langbot.app)",
-      "WebFetch(domain:prevu.cloud)"
+      "WebFetch(domain:pandoc.org)",
+      "WebFetch(domain:www.libreoffice.org)"
     ],
     "deny": [
       "Bash(rm:*)",
