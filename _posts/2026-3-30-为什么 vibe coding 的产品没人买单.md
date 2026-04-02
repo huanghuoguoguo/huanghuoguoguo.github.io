@@ -1,5 +1,5 @@
 ﻿---
-title: 为什么你 Vibe Coding 的产品没人买单
+title: "[转] 为什么你 Vibe Coding 的产品没人买单"
 date: 2026-03-30
 categories: [创业，AI]
 tags: [vibe coding, 伪需求，需求验证，一人公司]

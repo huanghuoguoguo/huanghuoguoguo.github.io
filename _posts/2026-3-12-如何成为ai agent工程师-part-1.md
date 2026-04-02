@@ -1,5 +1,5 @@
 ---
-title: "如何成为 AI Agent 工程师（一）：最小配置、上下文与规则"
+title: "[转] 如何成为 AI Agent 工程师（一）：最小配置、上下文与规则"
 date: 2026-03-12
 categories: [AI, 工程实践]
 tags: [AI Agent, Agentic Engineering, Context Engineering, Claude Code, Codex]
