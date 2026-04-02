@@ -5,11 +5,6 @@ description: |
   第1轮做词汇降维、句法冗余化、逻辑松散化，将机器报告风格转为专家讲解风格；
   第2轮检测并清除 AI 写作模式（夸大象征、宣传腔、三段式、AI 词汇、否定式排比等）。
   每次调用只执行一轮，用户需新开对话继续下一轮。
-allowed-tools:
-  - Read
-  - Write
-  - Edit
-  - AskUserQuestion
 ---
 
 # Humanizer-zh: 中文论文与技术文档降 AIGC 改写
