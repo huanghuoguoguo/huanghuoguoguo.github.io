@@ -7,15 +7,15 @@ tags: [ctfagent, Claude Code, Agent, RAG]
 
 # ctfagent：全自动打桩机
 
-同学说要打 CTF 比赛，听了我的建议，去 fork 了一个 CTF Agent 项目。
+同学说因为工作需求要打 CTF 比赛，听说我很会ai，于是说要请教我，他说他找了个agent打ctf比赛。
 
 他发了个链接过来：https://github.com/yuanzhiqj/BUUCTF_Agent
 
-一开始他只是问我这玩意为啥部署不上。我让 OpenClaw clone 下来，配环境、跑服务，折腾一通后还真跑起来了，丢给他用。
+一开始他只是问我这玩意为啥部署不上。我让 OpenClaw clone 下来，配环境、跑服务，折腾一通后还真跑起来了，然后就丢给他用。
 
 其实我不懂 CTF。不过点进去看了一眼，界面挺简单：一个网页对话框，输题目标题、描述、目标地址，然后它就自己开始打。
 
-用了两天，他找我：不好用。
+用了半天，他说，不好用。
 
 我说，我简单看了一下，这项目的 RAG 能增强啊。现在 Chroma 新版本内置了嵌入模型，连 embedding URL 都不用填了，你给作者提个 PR 试试。
 
