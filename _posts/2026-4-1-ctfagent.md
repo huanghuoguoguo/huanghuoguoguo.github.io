@@ -5,8 +5,6 @@ categories: [工具, AI, CTF]
 tags: [ctfagent, Claude Code, Agent, RAG]
 ---
 
-# ctfagent：全自动打桩机
-
 同学说因为工作需求要打 CTF 比赛，听说我很会ai，于是说要请教我，他说他找了个agent打ctf比赛。
 
 他发了个链接过来：https://github.com/yuanzhiqj/BUUCTF_Agent
