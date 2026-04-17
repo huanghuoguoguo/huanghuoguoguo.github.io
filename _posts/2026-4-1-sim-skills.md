@@ -5,8 +5,6 @@ categories: [工具, AI]
 tags: [sim-skills, Claude Code, 文档格式, Agent]
 ---
 
-# sim-skills：一个检查文档格式合规的 skill
-
 写大论文这段时间，最烦的事之一就是改格式。
 
 前一天刚把正文调顺，第二天导进 Word 一看，字体乱了，行距也飘了。尤其是现在会让 AI 帮忙改论文，内容在 Markdown、Word、聊天窗口里来回搬，格式错得很隐蔽。不盯着看，真不一定发现。
