@@ -90,7 +90,10 @@ theme_mode: # [light | dark]
 # e.g. 'https://cdn.com'
 cdn:
 
-# the avatar on sidebar, support local or CORS resources
+# Custom the edit link
+edit_url: "https://github.com/huanghuoguoguo/huanghuoguoguo.github.io/edit/main"
+
+# The avatar on sidebar, support local or CORS resources
 avatar: "/images/avatar.png"
 
 # The URL of the site-wide social preview image used in SEO `og:image` meta tag.
