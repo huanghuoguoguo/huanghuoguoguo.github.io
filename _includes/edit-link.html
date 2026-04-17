@@ -1,0 +1,8 @@
+{% if site.edit_url %}
+<div class="edit-link-wrapper mt-4">
+  <a href="{{ site.edit_url }}/{{ page.path }}" class="btn btn-outline-secondary btn-sm" target="_blank" rel="noopener">
+    <i class="fas fa-edit fa-fw me-1"></i>
+    编辑此页
+  </a>
+</div>
+{% endif %}
