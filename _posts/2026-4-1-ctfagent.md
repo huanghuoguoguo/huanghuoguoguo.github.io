@@ -5,6 +5,8 @@ categories: [工具, AI, CTF]
 tags: [ctfagent, Claude Code, Agent, RAG]
 ---
 
+4.23更新，看了supperpower和openspec的代码组织，发觉这个项目的代码组织不太合理，应该把公共代码部分抽取到外部。同时，应该把知识库维护、mem维护相关代码，通过claude hook的形式来做，和sp一样。
+
 同学说因为工作需求要打 CTF 比赛，听说我很会ai，于是说要请教我，他说他找了个agent打ctf比赛。
 
 他发了个链接过来：https://github.com/yuanzhiqj/BUUCTF_Agent
