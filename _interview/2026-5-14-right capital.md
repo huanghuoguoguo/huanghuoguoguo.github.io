@@ -145,6 +145,42 @@ author: huanghuoguoguo
 
 ---
 
+### Git 与 Linux 基础
+
+**Q: git reset 有几种模式？**
+
+> `git reset` 有三种模式：
+>
+> - `--soft`：只移动 HEAD 指针，暂存区和工作目录不变。相当于撤销 commit，但改动还在暂存区，可以重新 commit。
+>
+> - `--mixed`（默认）：移动 HEAD 指针，重置暂存区，工作目录不变。相当于撤销 commit + unstage，改动变成未暂存状态。
+>
+> - `--hard`：移动 HEAD 指针，重置暂存区和工作目录。彻底回退，所有改动丢失（除非有 reflog 可以救）。
+>
+> 忘掉 `--mixed` 了，不加参数时就是这个。
+
+**Q: 从别的分支 copy commit 过来是什么命令？**
+
+> `git cherry-pick <commit-hash>`。把指定 commit 的改动应用到当前分支，会生成一个新的 commit。
+>
+> 批量 cherry-pick：`git cherry-pick <start>^..<end>`（闭区间）。
+
+**Q: 现在用的 Mac 还是 Win？Linux 发行版是什么？**
+
+> 开发环境是 Windows 和 Ubuntu，但对不同发行版之间的区别不太了解。
+
+**Q: 文件 read、write、exec 权限是什么？**
+
+> Linux 文件权限用三组 rwx 表示：所有者、所属组、其他人。
+>
+> - `r`（read）：读取权限，数值 4。对文件是可以读取内容，对目录是可以 ls 列出内容。
+> - `w`（write）：写入权限，数值 2。对文件是可以修改内容，对目录是可以创建/删除文件。
+> - `x`（exec）：执行权限，数值 1。对文件是可以运行，对目录是可以 cd 进入。
+>
+> 常见的 755 = rwxr-xr-x（所有者全权限，其他人可读可执行），644 = rw-r--r--（文件默认权限）。
+
+---
+
 ### 反问
 
 问了一下业务方向和客户群体。对方说是做财务管理相关的，目前是纯程序计算，没有引入 AI，也在探索 AI 结合业务。
@@ -153,4 +189,4 @@ author: huanghuoguoguo
 
 ## 总结
 
-这场面试覆盖了 Java 后端开发的核心知识点，从语言特性（IoC、AOP、COW）到数据库（MySQL、Redis）再到 Web 基础（HTTP、鉴权）。整体比较全面，但也提醒我对 Web 开发的基础知识需要更系统地梳理，尤其是 OAuth、JWT 这些现代认证方案的细节。
+这场面试覆盖了 Java 后端开发的核心知识点，从语言特性（IoC、AOP、COW）到数据库（MySQL、Redis）再到 Web 基础（HTTP、鉴权）、Git 与 Linux 基础。整体比较全面，但也提醒我对 Web 开发的基础知识需要更系统地梳理，尤其是 OAuth、JWT 这些现代认证方案的细节。
