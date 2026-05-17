@@ -166,7 +166,7 @@ ctfagent 目前支持：
 
 **knowledge 目录怎么维护**
 
-每道题一个 workspace，解出来的题沉淀到 knowledge/。但题目一多，knowledge 容易变成垃圾堆——存进去容易，下次真能用上才是问题。
+每道题一个 workspace，解出来的题沉淀到 knowledge/。但题目一多，knowledge 很容易失控。存进去不难，难的是下次真的能用上。
 
 **逆向工具怎么接**
 
