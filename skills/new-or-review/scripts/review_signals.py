@@ -56,6 +56,8 @@ HEDGE_PHRASES = [
     "某种意义上",
 ]
 
+DASH_RE = re.compile(r"——|—")
+
 INTERVIEW_MARKERS = [
     "TODO",
     "待补",
@@ -154,6 +156,20 @@ def scan_paragraphs(blocks: list[dict]) -> list[dict]:
         text = block["text"]
         if text.startswith("#"):
             continue
+        if text.strip() == "---":
+            continue
+
+        dash_hits = DASH_RE.findall(text)
+        if dash_hits:
+            add_signal(
+                signals,
+                "dash_usage",
+                "warning",
+                block,
+                text,
+                "破折号容易制造解释、升格或金句感；在这类博客里会让判断显得被包装过。",
+                "默认删除破折号。不要机械换成逗号；先判断两边关系，再拆句、改成冒号、括号说明，或重写成更直接的判断。",
+            )
 
         hits = [phrase for phrase in CLICHE_PHRASES if phrase in text]
         if hits:
@@ -279,6 +295,19 @@ def scan_article_level(text: str, blocks: list[dict]) -> list[dict]:
     return signals
 
 
+def mask_frontmatter(text: str) -> str:
+    lines = text.splitlines()
+    if not lines or lines[0].strip() != "---":
+        return text
+
+    for index in range(1, len(lines)):
+        if lines[index].strip() == "---":
+            masked = [""] * (index + 1) + lines[index + 1 :]
+            return "\n".join(masked)
+
+    return text
+
+
 def classify_ai_trace(signals: list[dict]) -> str:
     weighted = 0
     for signal in signals:
@@ -297,7 +326,7 @@ def main() -> int:
     args = parser.parse_args()
 
     article_path = Path(args.article)
-    text = article_path.read_text(encoding="utf-8")
+    text = mask_frontmatter(article_path.read_text(encoding="utf-8"))
     blocks = paragraph_blocks(text)
     signals = scan_paragraphs(blocks) + scan_article_level(text, blocks)
 
