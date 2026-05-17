@@ -43,7 +43,7 @@ author: huanghuoguoguo
 
 ![author-bad](/images/author-bad.png)
 
-你感受一下。我翻了几屏就想骂人了。满屏幕的 `style={{}}`，hover 效果用 `onMouseEnter` 加 `onMouseLeave` 手动切 style 对象。import 冲突检测的逻辑在 JSON、PMPX、TXT 三个路径里原样重抄了一遍，15 个 `useState` 互相依赖，`console.log` 散了一地。行内样式铺到每一行 JSX 上，读起来像一份 CSS 被塞进了 JavaScript 里再被搅拌机打过一遍。
+你感受一下。我翻了几屏就想骂人了。满屏幕的 {% raw %}`style={{}}`{% endraw %}，hover 效果用 `onMouseEnter` 加 `onMouseLeave` 手动切 style 对象。import 冲突检测的逻辑在 JSON、PMPX、TXT 三个路径里原样重抄了一遍，15 个 `useState` 互相依赖，`console.log` 散了一地。行内样式铺到每一行 JSX 上，读起来像一份 CSS 被塞进了 JavaScript 里再被搅拌机打过一遍。
 
 这他妈的没法维护。
 

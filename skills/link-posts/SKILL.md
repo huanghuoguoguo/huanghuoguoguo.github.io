@@ -8,7 +8,7 @@ description: 查找当前文章与已有博文的关联，生成交叉引用
 扫描 `_posts/` 目录，找出与当前文章主题相关的已有博文，建议在合适的位置添加交叉引用链接。
 
 ## 规则
-- 使用 Jekyll 的 post_url 语法：`{% post_url YYYY-MM-DD-slug %}`
+- 使用 Jekyll 的 post_url 语法：{% raw %}`{% post_url YYYY-MM-DD-slug %}`{% endraw %}
 - 只在内容确实相关时才建议添加，不要强行关联
 - 优先关联同一技术领域的文章（如数据库相关文章互相引用）
 - 输出建议插入的位置和链接文案
