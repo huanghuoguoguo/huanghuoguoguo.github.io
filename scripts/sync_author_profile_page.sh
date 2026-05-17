@@ -5,7 +5,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
-SOURCE_FILE="${REPO_ROOT}/.claude/skills/author-profile/PROFILE.md"
+SOURCE_FILE="${REPO_ROOT}/skills/author-profile/PROFILE.md"
 TARGET_FILE="${REPO_ROOT}/_tabs/about.md"
 TMP_FILE="$(mktemp)"
 
@@ -33,7 +33,7 @@ order: 4
 
 > 这是博客的 About 页面，不是博客文章。
 >
-> 内容源文件是 `.claude/skills/author-profile/PROFILE.md`，由 `author-profile` skill 和 agent 维护；站点构建前会自动同步到这里。
+> 内容源文件是 `skills/author-profile/PROFILE.md`，由 `author-profile` skill 和 agent 维护；站点构建前会自动同步到这里。
 
 EOF
 
