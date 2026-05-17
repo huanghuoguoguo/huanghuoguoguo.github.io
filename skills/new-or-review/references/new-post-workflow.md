@@ -167,7 +167,7 @@
 
 ## Stage 3：Review
 
-首稿完成后，必须做 `review`。详细检查项和检测器信号解释见 `references/review-and-revise.md`。
+首稿完成后，必须做 `review`。详细检查项和内置脚本信号解释见 `references/review-and-revise.md`。
 
 `Stage 3` 必须输出：
 
@@ -185,7 +185,7 @@
 
 - 整篇重写
 - 把真实细节删掉换成平滑空话
-- 为了过检测把语气改得过于油滑
+- 为了消掉脚本命中项把语气改得过于油滑
 - 明明应该回访作者，却擅自用常识补完整段
 
 ## Stage 5：Final Check
