@@ -234,7 +234,7 @@ def scan_article_level(text: str, blocks: list[dict]) -> list[dict]:
             "warning",
             None,
             f"count={tick_count}",
-            "认知转折提示词出现过多，文章节奏可能变成可预测的成长叙事。",
+            "转折提示词出现过多，文章节奏可能变得可预测。",
             "把部分转折改成具体触发事件、数据、对话或报错。",
         )
 
@@ -259,7 +259,7 @@ def scan_article_level(text: str, blocks: list[dict]) -> list[dict]:
             "warning",
             None,
             f"paragraphs={len(formula_blocks)}",
-            "多段共享同一套认知弧，文章可能从真实复盘滑向公式化成长叙事。",
+            "多段共享同一套转折结构，文章可能滑向公式化叙事。",
             "至少让一处转折由外部锚点推动，例如数据、对话、报错或一次失败。",
         )
 
