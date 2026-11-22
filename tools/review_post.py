@@ -13,7 +13,8 @@ from pathlib import Path
 from typing import Any
 
 DEFAULT_DETECTOR_ROOT = Path("/home/yhh/learn/ai-writing-bad-cases-app")
-REPO_ROOT = Path(__file__).resolve().parents[1]`nDEFAULT_STYLE_GUIDE = REPO_ROOT / ".agent" / "README.md"
+REPO_ROOT = Path(__file__).resolve().parents[1]
+DEFAULT_STYLE_GUIDE = REPO_ROOT / ".agent" / "README.md"
 
 
 @dataclass
@@ -333,4 +334,5 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
+
 
