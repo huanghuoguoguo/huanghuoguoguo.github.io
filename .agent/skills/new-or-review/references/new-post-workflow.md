@@ -179,7 +179,7 @@
 
 ## Stage 4：Revise
 
-修订只针对命中问题做局部修改。具体修订规则见 `references/review-and-revise.md` 和 `references/anti-patterns.md`。
+修订只针对命中问题做局部修改。具体修订规则见 `references/review-and-revise.md` 和 `../humanizer-zh/references/anti-patterns.md`。
 
 禁止：
 

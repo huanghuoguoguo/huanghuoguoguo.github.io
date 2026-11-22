@@ -12,13 +12,13 @@ description: 写博客文章、审阅已有文章、降低 AI 味或根据素材
 
 ## 核心联动机制
 
-### 与 author-profile 的联动（最重要）
+### 与私有作者画像的联动
 
-写作前**必须先读认知框架**，理解底层假设，再决定文章推进方式。
+如果有可用的私有作者画像，写作前先读认知框架，理解底层假设，再决定文章推进方式。没有画像或材料不足时，先向作者确认，不要补造背景。
 
 **联动流程**：
 
-1. 读 私有画像仓库中的作者画像文件
+1. 如果可用，读取私有作者画像
 2. 根据文章主题，确定哪个认知维度最相关：
    - 技术学习文章 → 知识观（文章要展示认知过程）
    - 系统设计文章 → 工程观（文章要展示 trade-off）
@@ -48,9 +48,6 @@ description: 写博客文章、审阅已有文章、降低 AI 味或根据素材
 
 ## 目录
 
-- `references/author-constraints.md`
-  - 作者画像、知识边界、写作硬约束、稳定表达偏好
-
 - `references/new-post-workflow.md`
   - 新建文章的 `Stage 0 -> Stage 5`
 
@@ -60,17 +57,7 @@ description: 写博客文章、审阅已有文章、降低 AI 味或根据素材
 - `references/article-types.md`
   - 技术深潜、系统设计、读书笔记、实践复盘的骨架
 
-- `references/anti-patterns.md`
-  - 高频 AI 痕迹、模板化过渡、禁用词和改写方向
-
 - `references/style-extraction-method.md`
-  - 如何从样本文本里提取文风，如何练习模仿，而不是只学表面句式
-
-- `references/xiaolin-style.md`
-  - 基于 `samples/xiaolin.md` 和 `samples/xiaolin2.md` 提取的小林文风样本卡片，以及“借骨架不借人格”的适配规则
-
-- `references/xiaolin-adaptation-template.md`
-  - “借小林骨架，但仍然是作者本人”的提纲模板、写作提示词骨架和审稿自检清单
 
 ## 内置脚本与可选样本
 
@@ -78,51 +65,34 @@ description: 写博客文章、审阅已有文章、降低 AI 味或根据素材
   - 轻量程序化审稿脚本；相对当前 skill 目录解析
   - 只负责输出可疑信号，不替代人工判断，不负责代写终稿
 
-- `samples/xiaolin.md`
-  - 小林样本文本 1；用于重新提取或校准文风卡片
-
-- `samples/xiaolin2.md`
-  - 小林样本文本 2；用于重新提取或校准文风卡片
-
-可选样本缺失时：
-
-- 不得假装已经读取原始样本
-- 必须明确报告缺失了哪个相对路径
-- 可以继续使用 `references/` 里的沉淀卡片做有限分析，但不能冒充做了完整样本校准
-
 ## 使用顺序
 
 ### 新建文章
 
-1. 先读 私有画像仓库中的作者画像文件
-2. 再读 `private experience materials`
-3. 如果主题涉及具体项目，再读相关经历文件或 `private resume material`
-4. 再读 `references/author-constraints.md`
-5. 再读 `references/new-post-workflow.md`
-6. 根据文章类型按需读 `references/article-types.md`
-7. 如果用户明确要求模仿某种文风，读 `references/style-extraction-method.md` 和对应样本卡片
-8. 如果需要重新提取或校准小林文风卡片，再读 `samples/xiaolin.md` 和 `samples/xiaolin2.md`
-9. 如果是“像小林，但内容仍然是我自己的”，再读 `references/xiaolin-adaptation-template.md`
-10. 首稿完成后读 `references/review-and-revise.md`
-11. 如果有明显套话或模板味，再补读 `references/anti-patterns.md`
-12. 如果本轮暴露了新的稳定偏好或素材，提出回写 `author-profile` 的建议；经用户确认后再回写
+1. 如果可用，读取私有作者画像
+2. 再读作者提供的经历材料
+3. 如果主题涉及具体项目，再读相关经历或简历材料
+4. 再读 `references/new-post-workflow.md`
+5. 根据文章类型按需读 `references/article-types.md`
+6. 如果用户明确要求模仿某种文风，读 `references/style-extraction-method.md` 和用户提供的样本
+7. 首稿完成后读 `references/review-and-revise.md`
+8. 如果有明显套话或模板味，读 `../humanizer-zh/references/anti-patterns.md`
+9. 如果本轮暴露了新的稳定偏好或素材，提出回写私有作者画像的建议，经用户确认后再回写
 
 ### 审阅现有文章
 
-1. 先读 私有画像仓库中的作者画像文件
-2. 必要时读 `private experience materials`
-3. 再读 `references/author-constraints.md`
-4. 再读 `references/review-and-revise.md`
-5. 若问题集中在模板味、AI 味、结尾过度收束，再读 `references/anti-patterns.md`
-6. 如果用户要求“像某个作者/样本”，再读对应样本卡片
-7. 如果用户要求“像小林，但还是我自己”，再读 `references/xiaolin-adaptation-template.md`
-8. 如果用户真实改稿暴露了新的稳定偏好，提出回写 `author-profile` 的建议；经用户确认后再回写
+1. 如果可用，读取私有作者画像
+2. 必要时读取作者提供的经历材料
+3. 再读 `references/review-and-revise.md`
+4. 若问题集中在模板味、AI 味、结尾过度收束，再读 `../humanizer-zh/references/anti-patterns.md`
+5. 如果用户要求模仿某个作者或样本，先取得用户提供的样本，再读 `references/style-extraction-method.md`
+6. 如果用户真实改稿暴露了新的稳定偏好，提出回写私有作者画像的建议，经用户确认后再回写
 
 ### 提取或学习文风
 
 1. 先读 `references/style-extraction-method.md`
-2. 如果要重新提取或更新卡片，先读原始样本，例如 `samples/xiaolin.md` 和 `samples/xiaolin2.md`
-3. 再读已有样本卡片，例如 `references/xiaolin-style.md`
+2. 如果要重新提取或更新卡片，先取得用户提供的原始样本
+3. 再读已有的通用方法说明
 4. 输出时区分：
    - `可观察特征`
    - `推测性偏好`
@@ -169,9 +139,7 @@ description: 写博客文章、审阅已有文章、降低 AI 味或根据素材
 python .agent/skills/new-or-review/scripts/review_signals.py path/to/article.md
 ```
 
-如果环境里的 `python` 命令可用，也可以把 `py` 换成 `python`。
-
-把脚本输出当成 `signals`，再结合 `author-profile`、文章材料和人工审稿判断生成 revision plan。脚本没有命中的地方不代表没有问题；脚本命中的地方也不代表必须修改。
+把脚本输出当成 `signals`，再结合文章材料、可用的私有作者画像和人工审稿判断生成 revision plan。脚本没有命中的地方不代表没有问题；脚本命中的地方也不代表必须修改。
 
 ## 输出原则
 

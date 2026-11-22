@@ -340,7 +340,7 @@ def main() -> int:
             "info_count": sum(1 for signal in signals if signal["severity"] == "info"),
         },
         "signals": signals,
-        "note": "Signals are review hints, not verdicts. Confirm every item against author-profile and the article context.",
+        "note": "Signals are review hints, not verdicts. Confirm every item against available author context and the article context.",
     }
 
     print(json.dumps(result, ensure_ascii=False, indent=2 if args.pretty else None))
