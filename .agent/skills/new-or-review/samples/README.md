@@ -12,5 +12,3 @@
 
 如果文件缺失，agent 可以读取已有的 `references/xiaolin-style.md`，但不能声称已经读取过原始样本。
 
-
-

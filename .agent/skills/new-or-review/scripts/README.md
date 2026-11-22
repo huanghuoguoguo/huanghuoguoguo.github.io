@@ -18,5 +18,3 @@ python .agent/skills/new-or-review/scripts/review_signals.py path/to/article.md 
 
 脚本输出只是审稿线索，不是判决。每个命中项都需要结合 `author-profile`、文章上下文和人工判断再决定是否修改。
 
-
-

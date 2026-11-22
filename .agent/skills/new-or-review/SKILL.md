@@ -180,5 +180,3 @@ python .agent/skills/new-or-review/scripts/review_signals.py path/to/article.md
 - 优先保留作者自己的材料、火气、犹豫和认知来路
 - 需要回访作者时，明确列出少量关键问题，不铺满
 
-
-
