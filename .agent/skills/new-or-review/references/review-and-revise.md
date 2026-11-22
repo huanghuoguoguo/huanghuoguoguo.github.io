@@ -65,7 +65,7 @@
 - 对已有文章或首稿运行脚本：
 
   ```bash
-  py .claude/skills/new-or-review/scripts/review_signals.py path/to/article.md
+  python .agent/skills/new-or-review/scripts/review_signals.py path/to/article.md
   ```
 
   如果环境里的 `python` 命令可用，也可以把 `py` 换成 `python`。
@@ -233,3 +233,6 @@
 - 连续两轮改动后收益很小
 - 修订开始损伤真实细节
 - 文章已经“没 AI 味，但也没你味”
+
+
+

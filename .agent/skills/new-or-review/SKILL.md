@@ -18,7 +18,7 @@ description: 写博客文章、审阅已有文章、降低 AI 味或根据素材
 
 **联动流程**：
 
-1. 读 `.claude/skills/author-profile/PROFILE.md` 认知框架部分
+1. 读 私有画像仓库中的作者画像文件
 2. 根据文章主题，确定哪个认知维度最相关：
    - 技术学习文章 → 知识观（文章要展示认知过程）
    - 系统设计文章 → 工程观（文章要展示 trade-off）
@@ -94,9 +94,9 @@ description: 写博客文章、审阅已有文章、降低 AI 味或根据素材
 
 ### 新建文章
 
-1. 先读 `.claude/skills/author-profile/PROFILE.md`
-2. 再读 `_not_publish/经历与思考素材库.md`
-3. 如果主题涉及具体项目，再读相关经历文件或 `_not_publish/jianli.md`
+1. 先读 私有画像仓库中的作者画像文件
+2. 再读 `private experience materials`
+3. 如果主题涉及具体项目，再读相关经历文件或 `private resume material`
 4. 再读 `references/author-constraints.md`
 5. 再读 `references/new-post-workflow.md`
 6. 根据文章类型按需读 `references/article-types.md`
@@ -109,8 +109,8 @@ description: 写博客文章、审阅已有文章、降低 AI 味或根据素材
 
 ### 审阅现有文章
 
-1. 先读 `.claude/skills/author-profile/PROFILE.md`
-2. 必要时读 `_not_publish/经历与思考素材库.md`
+1. 先读 私有画像仓库中的作者画像文件
+2. 必要时读 `private experience materials`
 3. 再读 `references/author-constraints.md`
 4. 再读 `references/review-and-revise.md`
 5. 若问题集中在模板味、AI 味、结尾过度收束，再读 `references/anti-patterns.md`
@@ -166,7 +166,7 @@ description: 写博客文章、审阅已有文章、降低 AI 味或根据素材
 使用方式：
 
 ```bash
-py .claude/skills/new-or-review/scripts/review_signals.py path/to/article.md
+python .agent/skills/new-or-review/scripts/review_signals.py path/to/article.md
 ```
 
 如果环境里的 `python` 命令可用，也可以把 `py` 换成 `python`。
@@ -179,3 +179,6 @@ py .claude/skills/new-or-review/scripts/review_signals.py path/to/article.md
 - 允许局部不确定，但不能把不确定写成事实
 - 优先保留作者自己的材料、火气、犹豫和认知来路
 - 需要回访作者时，明确列出少量关键问题，不铺满
+
+
+

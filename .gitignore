@@ -27,5 +27,4 @@ _sass/vendors
 assets/js/dist
 _tabs/about.md
 
-# Claude local settings
-.claude/settings.local.json
+

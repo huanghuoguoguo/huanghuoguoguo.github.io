@@ -17,3 +17,16 @@
 ## 审稿原则
 
 技术事实必须准确，有疑问时指出而不是放过。论证逻辑要自洽，不要为了得出结论而夸大前提。
+
+
+
+## Portable skill layout
+
+- Each skill lives at `.agent/skills/<skill-name>/`.
+- `SKILL.md` is the entrypoint and documents the skill in tool-agnostic terms.
+- Supporting references and scripts stay beside the skill.
+- Skills must not assume a specific agent runtime, hook system, command name, or hidden configuration directory.
+- Runtime adapters may call these skills through their own discovery mechanisms.
+
+The author profile and personal source materials live in the separate private profile repository.
+

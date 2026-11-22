@@ -11,9 +11,12 @@
 使用示例：
 
 ```bash
-py .claude/skills/new-or-review/scripts/review_signals.py path/to/article.md --pretty
+python .agent/skills/new-or-review/scripts/review_signals.py path/to/article.md --pretty
 ```
 
 如果环境里的 `python` 命令可用，也可以把 `py` 换成 `python`。
 
 脚本输出只是审稿线索，不是判决。每个命中项都需要结合 `author-profile`、文章上下文和人工判断再决定是否修改。
+
+
+
